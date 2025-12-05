@@ -1,0 +1,35 @@
+    [
+        {
+          "id": "ID_REAL_CARRO_1",
+          "valorFipe": 48500.00,
+          "recallPendente": false,
+          "ultimaRevisaoAPI": "2023-11-10",
+          "dicaManutencao": "Verifique o nível do óleo a cada 1000km.",
+          "fatoCurioso": "Este modelo foi o carro mais vendido no país em seu ano de lançamento."
+        },
+        {
+          "id": "ID_REAL_ESPORTIVO_1",
+          "valorFipe": 215000.00,
+          "recallPendente": true,
+          "recallDescricao": "Verificação do sistema de arrefecimento do turbo.",
+          "ultimaRevisaoAPI": "2024-02-28",
+          "dicaManutencao": "Use apenas gasolina premium para melhor performance.",
+          "fatoCurioso": "Atinge 100km/h em menos de 4 segundos."
+        },
+        {
+          "id": "ID_REAL_CAMINHAO_1",
+          "valorFipe": 350000.00,
+          "recallPendente": false,
+          "ultimaRevisaoAPI": "2024-01-15",
+          "dicaManutencao": "Calibre os pneus semanalmente, especialmente sob carga.",
+          "fatoCurioso": "Possui sistema de freios a ar de alta capacidade."
+        },
+        {
+          "id": "ID_QUALQUER_NAO_USADO_NA_GARAGEM",
+          "valorFipe": 62000.00,
+          "recallPendente": false,
+          "ultimaRevisaoAPI": "2023-09-05",
+          "dicaManutencao": "Alinhamento e balanceamento recomendados a cada 10.000km.",
+          "fatoCurioso": "Conhecido por seu baixo consumo de combustível."
+        }
+      ]
