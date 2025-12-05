@@ -111,31 +111,60 @@ const adicionarVeiculo = async (e) => {
     finally { btn.textContent = "Adicionar"; btn.disabled = false; }
 };
 
+// ARQUIVO: js/principal.js (SUBSTITUA A FUNÇÃO selecionarVeiculo ou o arquivo todo se preferir)
+
+// ... (resto do código igual) ...
+
 const selecionarVeiculo = async (id) => {
     const token = localStorage.getItem('token');
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         veiculoAtual = await res.json();
-
+        
+        // Preenche Infos de Texto
         document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
-        const donoEmail = veiculoAtual.owner.email || '???';
+        const donoEmail = veiculoAtual.owner.email || 'Desconhecido';
         document.getElementById('info-proprietario').textContent = `Placa: ${veiculoAtual.placa} (Dono: ${donoEmail})`;
+        
         document.getElementById('info-tipo').textContent = veiculoAtual.tipo;
         document.getElementById('info-ano').textContent = veiculoAtual.ano;
         document.getElementById('info-cor').textContent = veiculoAtual.cor;
 
+        // --- CORREÇÃO DA IMAGEM ---
         const img = document.getElementById('imagemVeiculo');
+        
+        // URL da Imagem de "Fallback" (Reserva) caso a original falhe
+        const imagemReserva = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
+
         if (veiculoAtual.imageUrl) {
-            const path = veiculoAtual.imageUrl.replace(/\\/g, '/');
-            img.src = `https://vinicius-yuji-miaki-iiw24a.onrender.com/${path}`;
+            // 1. Corrige barras invertidas (Windows) para barras normais
+            let caminhoLimpo = veiculoAtual.imageUrl.replace(/\\/g, '/');
+            
+            // 2. Garante que não tenha "uploads/" duplicado
+            // Se o banco salvou "uploads/carro.jpg", ok. Se salvou só "carro.jpg", a gente arruma.
+            if (!caminhoLimpo.includes('uploads/')) {
+                caminhoLimpo = 'uploads/' + caminhoLimpo;
+            }
+
+            // 3. Monta a URL completa do Render
+            // IMPORTANTE: O link da imagem NÃO leva "/api" no meio.
+            // Pega a base url (https://...com) removendo o final "/api"
+            const baseUrl = API_BASE_URL.replace('/api', ''); 
+            img.src = `${baseUrl}/${caminhoLimpo}`;
+
+            // 4. Se a imagem não existir (Render apagou), carrega a reserva
+            img.onerror = () => {
+                console.log("Imagem não encontrada no servidor (pode ter sido apagada pelo Render). Usando reserva.");
+                img.src = imagemReserva;
+            };
         } else {
-            img.src = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
+            img.src = imagemReserva;
         }
 
+        // --- BOTÕES E RESTO DO CÓDIGO (Igual ao anterior) ---
         const btnShare = document.getElementById('botaoCompartilharHeader');
         const btnRemove = document.getElementById('botaoRemoverHeader');
         
-        // Remove eventos antigos
         const newBtnShare = btnShare.cloneNode(true);
         const newBtnRemove = btnRemove.cloneNode(true);
         btnShare.parentNode.replaceChild(newBtnShare, btnShare);
@@ -144,8 +173,7 @@ const selecionarVeiculo = async (id) => {
         newBtnShare.onclick = () => compartilharVeiculo(veiculoAtual._id);
         newBtnRemove.onclick = () => removerVeiculo(veiculoAtual._id);
 
-        const btnTurbo = document.getElementById('btn-turbo');
-        btnTurbo.style.display = (veiculoAtual.tipo === 'Carro Esportivo') ? 'inline-flex' : 'none';
+        document.getElementById('btn-turbo').style.display = (veiculoAtual.tipo === 'Carro Esportivo') ? 'inline-flex' : 'none';
 
         document.getElementById('mensagem-selecione').style.display = 'none';
         document.getElementById('painelVeiculoSelecionado').style.display = 'block';
@@ -155,6 +183,7 @@ const selecionarVeiculo = async (id) => {
     } catch (e) { console.error(e); }
 };
 
+// ... (resto do código) ...
 const compartilharVeiculo = async (id) => {
     const email = prompt("Email da pessoa (ela precisa ter conta no site):");
     if (!email) return;
