@@ -1,277 +1,276 @@
-// js/principal.js
+// ARQUIVO: js/principal.js (SUBSTITUA TUDO)
 
-// ===================================================================================
-// ARQUIVO COMPLETO E CORRIGIDO - Versão Definitiva
-// ===================================================================================
-
-// --- CONFIGURAÇÃO INICIAL ---
-// Use o link do SEU Render (sem a barra / no final)
 const API_BASE_URL = 'https://vinicius-yuji-miaki-iiw24a.onrender.com/api';
+let veiculoAtual = null;
 
-// --- FUNÇÕES DE UTILIDADE ---
-const parseJwt = (token) => {
-    try {
-        return JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-        return null;
-    }
+// --- SISTEMA DE NOTIFICAÇÃO ---
+const showNotification = (msg, type) => {
+    const area = document.getElementById('notification-area');
+    document.getElementById('notification-message').textContent = msg;
+    area.className = type + ' show';
+    setTimeout(() => area.className = '', 5000);
 };
 
-const showNotification = (message, type = 'info', ui) => {
-    if (!ui.notificationArea || !ui.notificationMessage) return;
-    ui.notificationMessage.textContent = message;
-    ui.notificationArea.className = '';
-    ui.notificationArea.classList.add(type, 'show');
-    setTimeout(() => {
-        ui.notificationArea.classList.remove('show');
-    }, 4000);
-};
-
-// --- LÓGICA DE AUTENTICAÇÃO E VISIBILIDADE ---
-const checkAuthState = async (ui) => {
+// --- AUTH ---
+const checkAuth = async () => {
     const token = localStorage.getItem('token');
     if (token) {
-        ui.authContainer.style.display = 'none';
-        ui.appContainer.style.display = 'flex';
-        await carregarVeiculosDoUsuario(ui);
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        carregarVeiculos();
     } else {
-        ui.authContainer.style.display = 'block';
-        ui.appContainer.style.display = 'none';
+        document.getElementById('auth-container').style.display = 'block';
+        document.getElementById('app-container').style.display = 'none';
     }
 };
 
-const handleLogin = async (event, ui) => {
-    event.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+const realizarLogin = async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value })
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        localStorage.setItem('token', data.token);
-        showNotification(data.message, 'success', ui);
-        ui.formLogin.reset();
-        await checkAuthState(ui);
-    } catch (error) {
-        showNotification(error.message || 'Erro no login.', 'error', ui);
-    }
+        const data = await res.json();
+        if (res.ok) {
+            localStorage.setItem('token', data.token);
+            checkAuth();
+            showNotification('Logado!', 'success');
+        } else showNotification(data.message, 'error');
+    } catch (e) { showNotification('Erro conexão.', 'error'); } 
+    finally { btn.textContent = "Entrar"; btn.disabled = false; }
 };
 
-const handleRegister = async (event, ui) => {
-    event.preventDefault();
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
+const realizarRegistro = async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email: document.getElementById('registerEmail').value, password: document.getElementById('registerPassword').value })
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        showNotification(data.message, 'success', ui);
-        ui.formRegister.reset();
-    } catch (error) {
-        showNotification(error.message || 'Erro no registro.', 'error', ui);
-    }
+        const data = await res.json();
+        if (res.ok) {
+            showNotification('Criado! Faça login.', 'success');
+            document.getElementById('formRegister').reset();
+        } else showNotification(data.message, 'error');
+    } catch (e) { showNotification('Erro registro.', 'error'); } 
+    finally { btn.textContent = "Criar Conta"; btn.disabled = false; }
 };
 
-const handleLogout = (ui) => {
-    localStorage.removeItem('token');
-    showNotification('Você saiu da sua garagem.', 'info', ui);
-    if (ui.listaVeiculosSidebar) ui.listaVeiculosSidebar.innerHTML = '<li class="placeholder">Faça login para ver seus veículos.</li>';
-    if (ui.painelVeiculoSelecionado) ui.painelVeiculoSelecionado.style.display = 'none';
-    if (ui.mensagemBoasVindas) ui.mensagemBoasVindas.style.display = 'block';
-    checkAuthState(ui);
+// --- VEÍCULOS ---
+const carregarVeiculos = async () => {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/veiculos`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const veiculos = await res.json();
+        const lista = document.getElementById('listaVeiculosSidebar');
+        lista.innerHTML = '';
+        if (veiculos.length === 0) lista.innerHTML = '<li style="padding:15px; color:#888;">Nada aqui.</li>';
+        veiculos.forEach(v => {
+            const li = document.createElement('li');
+            li.style.padding = '10px'; li.style.cursor = 'pointer'; li.style.borderBottom = '1px solid #eee';
+            li.innerHTML = `<i class="fas fa-car"></i> ${v.modelo} <small>(${v.placa})</small>`;
+            li.onclick = () => selecionarVeiculo(v._id);
+            lista.appendChild(li);
+        });
+    } catch (e) { console.error(e); }
 };
 
-// --- LÓGICA DA GARAGEM ---
-const handleAddVehicle = async (event, ui) => {
-    event.preventDefault();
-    const form = ui.formNovoVeiculo;
-    const formData = new FormData(form); // Cria um pacote de dados com o formulário
-
-    if (!formData.get('tipo')) {
-        showNotification('Por favor, selecione o tipo de veículo.', 'warning', ui);
-        return;
-    }
+const adicionarVeiculo = async (e) => {
+    e.preventDefault();
+    const btn = document.querySelector('#formNovoVeiculo button[type="submit"]');
+    btn.textContent = "Salvando..."; btn.disabled = true;
+    const formData = new FormData(document.getElementById('formNovoVeiculo'));
+    const token = localStorage.getItem('token');
 
     try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/veiculos`, {
+        const res = await fetch(`${API_BASE_URL}/veiculos`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // NÃO defina o 'Content-Type', o navegador fará isso automaticamente
-            },
-            body: formData // Envia o pacote
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
         });
 
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
-
-        showNotification(`Veículo adicionado!`, 'success', ui);
-        ui.modalAdicionarVeiculo.close();
-        form.reset();
-        await carregarVeiculosDoUsuario(ui);
-    } catch (error) {
-        showNotification(error.message || 'Erro ao adicionar veículo.', 'error', ui);
-    }
+        // Tenta ler como texto primeiro para debug
+        const textResponse = await res.text();
+        
+        try {
+            const data = JSON.parse(textResponse);
+            if (!res.ok) throw new Error(data.message || 'Erro servidor');
+            
+            document.getElementById('modalAdicionarVeiculo').close();
+            document.getElementById('formNovoVeiculo').reset();
+            showNotification('Veículo criado!', 'success');
+            carregarVeiculos();
+        } catch (jsonError) {
+            console.error("Erro Servidor (HTML):", textResponse);
+            throw new Error("O servidor falhou. Verifique o console.");
+        }
+    } catch (e) { showNotification(e.message, 'error'); } 
+    finally { btn.textContent = "Adicionar"; btn.disabled = false; }
 };
 
-const handleShareVehicle = async (event, ui) => {
-    const veiculoId = event.currentTarget.dataset.id;
-    if (!veiculoId) {
-        showNotification('Selecione um dos seus veículos para compartilhar.', 'warning', ui);
-        return;
-    }
-    const email = prompt("Digite o e-mail do usuário para compartilhar:");
-    if (!email || email.trim() === '') return;
+const selecionarVeiculo = async (id) => {
+    const token = localStorage.getItem('token');
     try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/share`, {
+        const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        veiculoAtual = await res.json();
+
+        document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
+        const donoEmail = veiculoAtual.owner.email || '???';
+        document.getElementById('info-proprietario').textContent = `Placa: ${veiculoAtual.placa} (Dono: ${donoEmail})`;
+        document.getElementById('info-tipo').textContent = veiculoAtual.tipo;
+        document.getElementById('info-ano').textContent = veiculoAtual.ano;
+        document.getElementById('info-cor').textContent = veiculoAtual.cor;
+
+        const img = document.getElementById('imagemVeiculo');
+        if (veiculoAtual.imageUrl) {
+            const path = veiculoAtual.imageUrl.replace(/\\/g, '/');
+            img.src = `https://vinicius-yuji-miaki-iiw24a.onrender.com/${path}`;
+        } else {
+            img.src = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
+        }
+
+        const btnShare = document.getElementById('botaoCompartilharHeader');
+        const btnRemove = document.getElementById('botaoRemoverHeader');
+        
+        // Remove eventos antigos
+        const newBtnShare = btnShare.cloneNode(true);
+        const newBtnRemove = btnRemove.cloneNode(true);
+        btnShare.parentNode.replaceChild(newBtnShare, btnShare);
+        btnRemove.parentNode.replaceChild(newBtnRemove, btnRemove);
+
+        newBtnShare.onclick = () => compartilharVeiculo(veiculoAtual._id);
+        newBtnRemove.onclick = () => removerVeiculo(veiculoAtual._id);
+
+        const btnTurbo = document.getElementById('btn-turbo');
+        btnTurbo.style.display = (veiculoAtual.tipo === 'Carro Esportivo') ? 'inline-flex' : 'none';
+
+        document.getElementById('mensagem-selecione').style.display = 'none';
+        document.getElementById('painelVeiculoSelecionado').style.display = 'block';
+
+        atualizarInterfaceControle();
+        carregarManutencoes(id);
+    } catch (e) { console.error(e); }
+};
+
+const compartilharVeiculo = async (id) => {
+    const email = prompt("Email da pessoa (ela precisa ter conta no site):");
+    if (!email) return;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/veiculos/${id}/share`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify({ email })
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        showNotification(data.message, 'success', ui);
-    } catch (error) {
-        showNotification(error.message || 'Erro ao compartilhar.', 'error', ui);
-    }
+
+        const textResponse = await res.text();
+        try {
+            const data = JSON.parse(textResponse);
+            if(res.ok) showNotification('Compartilhado!', 'success');
+            else showNotification(data.message, 'warning');
+        } catch (jsonError) {
+            console.error("Erro HTML no Compartilhar:", textResponse);
+            showNotification("Erro interno no servidor.", 'error');
+        }
+    } catch (e) { showNotification('Erro conexão.', 'error'); }
 };
 
-const carregarVeiculosDoUsuario = async (ui) => {
+const removerVeiculo = async (id) => {
+    if(!confirm("Tem certeza?")) return;
     const token = localStorage.getItem('token');
-    if (!token) return;
     try {
-        const response = await fetch(`${API_BASE_URL}/veiculos`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const veiculos = await response.json();
-        if (!response.ok) throw new Error(veiculos.message);
-        atualizarListaVeiculosSidebar(veiculos, ui);
-    } catch (error) {
-        showNotification(error.message || 'Erro ao carregar veículos.', 'error', ui);
-    }
+        const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, {
+            method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if(res.ok) {
+            showNotification('Removido.', 'info');
+            document.getElementById('painelVeiculoSelecionado').style.display = 'none';
+            document.getElementById('mensagem-selecione').style.display = 'block';
+            carregarVeiculos();
+        } else showNotification('Erro ao remover', 'error');
+    } catch(e) { showNotification('Erro conexão', 'error'); }
 };
 
-const atualizarListaVeiculosSidebar = (veiculos, ui) => {
-    if (!ui.listaVeiculosSidebar) return;
-    ui.listaVeiculosSidebar.innerHTML = '';
+// --- FUNÇÕES DE CONTROLE (Sem alterações) ---
+const atualizarServidorStatus = async () => {
+    if (!veiculoAtual) return;
     const token = localStorage.getItem('token');
-    if (!token) return;
-    const userData = parseJwt(token);
-    if (!veiculos || veiculos.length === 0) {
-        ui.listaVeiculosSidebar.innerHTML = '<li class="placeholder">Sua garagem está vazia.</li>';
-        return;
-    }
-    veiculos.forEach(veiculo => {
-        const li = document.createElement('li');
-        li.dataset.id = veiculo._id;
-        const isOwner = userData.userId === (veiculo.owner._id || veiculo.owner);
-        let ownerInfo = !isOwner && veiculo.owner && veiculo.owner.email ? ` <small style="opacity: 0.7;">(de ${veiculo.owner.email})</small>` : '';
-        li.innerHTML = `<i class="fas fa-car-side"></i><span class="veiculo-nome">${veiculo.modelo} - ${veiculo.placa}${ownerInfo}</span>`;
-        li.addEventListener('click', () => selecionarEExibirVeiculo(veiculo._id, ui));
-        ui.listaVeiculosSidebar.appendChild(li);
+    await fetch(`${API_BASE_URL}/veiculos/${veiculoAtual._id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ velocidade: veiculoAtual.velocidade, ligado: veiculoAtual.ligado })
     });
 };
 
-const selecionarEExibirVeiculo = async (veiculoId, ui) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const veiculo = await response.json();
-        if (!response.ok) throw new Error(veiculo.message);
-        
-        // Preenche dados
-        document.getElementById('info-modelo-placa').textContent = `${veiculo.modelo} (${veiculo.placa})`;
-        document.getElementById('info-tipo').textContent = veiculo.tipo;
-        document.getElementById('info-marca').textContent = veiculo.marca;
-        document.getElementById('info-cor').textContent = veiculo.cor;
-        document.getElementById('info-ano').textContent = veiculo.ano;
-        document.getElementById('info-id').textContent = `ID: ${veiculo._id}`;
+const atualizarInterfaceControle = () => {
+    const btnLigar = document.getElementById('btn-ligar');
+    const btnAcelerar = document.getElementById('btn-acelerar');
+    const btnFrear = document.getElementById('btn-frear');
+    const display = document.getElementById('valor-velocidade');
+    const ponteiro = document.getElementById('ponteiro-velocidade');
 
-           const imgElement = document.getElementById('imagemVeiculo');
-        if (veiculo.imageUrl) {
-            // Corrige as barras do caminho (importante para o navegador)
-            const correctedUrl = veiculo.imageUrl.replace(/\\/g, '/');
-            // Monta a URL completa para a imagem
-// Substitua o localhost pelo link do Render aqui também
-imgElement.src = `https://vinicius-yuji-miaki-iiw24a.onrender.com/${correctedUrl}`;
-        } else {
-            // Usa uma imagem padrão se não houver upload
-            imgElement.src = 'https://i.imgur.com/2s46e5k.png';
-        }
-        
-        // Verifica se é proprietário
-        const userData = parseJwt(token);
-        const isOwner = userData.userId === (veiculo.owner._id || veiculo.owner);
-        const infoProprietario = document.getElementById('info-proprietario');
-        infoProprietario.style.display = isOwner ? 'none' : 'block';
-        if (!isOwner) infoProprietario.textContent = `Compartilhado por: ${veiculo.owner.email}`;
-        
-        // Habilita/desabilita botões
-        ui.botaoCompartilharHeader.disabled = !isOwner;
-        ui.botaoEditarHeader.disabled = !isOwner;
-        ui.botaoRemoverHeader.disabled = !isOwner;
-        
-        // Adiciona IDs aos botões
-        ui.botaoCompartilharHeader.dataset.id = veiculo._id;
-        ui.botaoEditarHeader.dataset.id = veiculo._id;
-        ui.botaoRemoverHeader.dataset.id = veiculo._id;
-        
-        // Mostra o painel
-        ui.painelVeiculoSelecionado.style.display = 'block';
-        ui.mensagemBoasVindas.style.display = 'none';
-
-    } catch (error) {
-        showNotification(error.message || 'Erro ao exibir detalhes.', 'error', ui);
+    if (veiculoAtual.ligado) {
+        btnLigar.textContent = "DESLIGAR"; btnLigar.className = "botao-perigo";
+        btnAcelerar.disabled = false; btnFrear.disabled = false;
+    } else {
+        btnLigar.textContent = "LIGAR"; btnLigar.className = "botao-sucesso";
+        btnAcelerar.disabled = true; btnFrear.disabled = true;
+        veiculoAtual.velocidade = 0;
     }
+    display.textContent = veiculoAtual.velocidade;
+    const angulo = (veiculoAtual.velocidade / 220) * 180 - 90;
+    ponteiro.style.transform = `rotate(${Math.min(angulo, 90)}deg)`;
 };
 
+document.getElementById('btn-ligar').onclick = () => { veiculoAtual.ligado = !veiculoAtual.ligado; atualizarInterfaceControle(); atualizarServidorStatus(); };
+document.getElementById('btn-acelerar').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 10; atualizarInterfaceControle(); atualizarServidorStatus(); } };
+document.getElementById('btn-frear').onclick = () => { if(veiculoAtual.ligado && veiculoAtual.velocidade > 0) { veiculoAtual.velocidade = Math.max(0, veiculoAtual.velocidade - 10); atualizarInterfaceControle(); atualizarServidorStatus(); } };
+document.getElementById('btn-turbo').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 50; showNotification('TURBO!', 'warning'); atualizarInterfaceControle(); atualizarServidorStatus(); } };
 
-// --- INICIALIZAÇÃO DA APLICAÇÃO ---
-// Este bloco garante que o script só roda depois que o HTML está 100% carregado.
+// --- MANUTENÇÃO ---
+const carregarManutencoes = async (id) => {
+    const token = localStorage.getItem('token');
+    const ul = document.getElementById('lista-manutencoes');
+    ul.innerHTML = 'Carregando...';
+    try {
+        const res = await fetch(`${API_BASE_URL}/veiculos/${id}/manutencoes`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const lista = await res.json();
+        ul.innerHTML = '';
+        if(lista.length === 0) ul.innerHTML = '<li style="color:#777;text-align:center;">Sem manutenções.</li>';
+        lista.forEach(m => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${m.descricaoServico}</span> <strong>R$ ${m.custo}</strong>`;
+            ul.appendChild(li);
+        });
+    } catch(e) { ul.innerHTML = 'Erro ao carregar.'; }
+};
+
+document.getElementById('formManutencao').onsubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const formData = new FormData(e.target);
+    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
+    await fetch(`${API_BASE_URL}/manutencoes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ descricaoServico: formData.get('descricaoServico'), custo: formData.get('custo'), veiculo: veiculoAtual._id })
+    });
+    e.target.reset();
+    btn.textContent = "Add"; btn.disabled = false;
+    carregarManutencoes(veiculoAtual._id);
+};
+
+// --- START ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Mapeia todos os elementos da interface uma única vez.
-    const ui = {
-        authContainer: document.getElementById('auth-container'),
-        appContainer: document.getElementById('app-container'),
-        formLogin: document.getElementById('formLogin'),
-        formRegister: document.getElementById('formRegister'),
-        btnLogout: document.getElementById('btnLogout'),
-        listaVeiculosSidebar: document.getElementById('listaVeiculosSidebar'),
-        painelVeiculoSelecionado: document.getElementById('painelVeiculoSelecionado'),
-        mensagemBoasVindas: document.getElementById('mensagem-selecione'),
-        modalAdicionarVeiculo: document.getElementById('modalAdicionarVeiculo'),
-        formNovoVeiculo: document.getElementById('formNovoVeiculo'),
-        btnAbrirModalAdicionar: document.getElementById('btnAbrirModalAdicionar'),
-        btnFecharModalAdicionar: document.getElementById('btnFecharModalAdicionar'),
-        botaoCompartilharHeader: document.getElementById('botaoCompartilharHeader'),
-        botaoEditarHeader: document.getElementById('botaoEditarHeader'),
-        botaoRemoverHeader: document.getElementById('botaoRemoverHeader'),
-        notificationArea: document.getElementById('notification-area'),
-        notificationMessage: document.getElementById('notification-message'),
-        notificationCloseBtn: document.querySelector('#notification-area .close-btn'),
-    };
-    
-    // 2. Garante que elementos essenciais existem antes de adicionar listeners
-    if (ui.formLogin) ui.formLogin.addEventListener('submit', (e) => handleLogin(e, ui));
-    if (ui.formRegister) ui.formRegister.addEventListener('submit', (e) => handleRegister(e, ui));
-    if (ui.btnLogout) ui.btnLogout.addEventListener('click', () => handleLogout(ui));
-    
-    if (ui.btnAbrirModalAdicionar) ui.btnAbrirModalAdicionar.addEventListener('click', () => ui.modalAdicionarVeiculo.showModal());
-    if (ui.btnFecharModalAdicionar) ui.btnFecharModalAdicionar.addEventListener('click', () => ui.modalAdicionarVeiculo.close());
-    if (ui.formNovoVeiculo) ui.formNovoVeiculo.addEventListener('submit', (e) => handleAddVehicle(e, ui));
-    
-    if (ui.botaoCompartilharHeader) ui.botaoCompartilharHeader.addEventListener('click', (e) => handleShareVehicle(e, ui));
-    
-    if (ui.notificationCloseBtn) ui.notificationCloseBtn.addEventListener('click', () => ui.notificationArea.classList.remove('show'));
-
-    // 3. Inicia a aplicação verificando o estado de login.
-    checkAuthState(ui);
+    document.getElementById('formLogin').onsubmit = realizarLogin;
+    document.getElementById('formRegister').onsubmit = realizarRegistro;
+    document.getElementById('btnLogout').onclick = () => { localStorage.removeItem('token'); checkAuth(); };
+    document.getElementById('btnAbrirModalAdicionar').onclick = () => document.getElementById('modalAdicionarVeiculo').showModal();
+    document.getElementById('btnFecharModalAdicionar').onclick = () => document.getElementById('modalAdicionarVeiculo').close();
+    document.getElementById('formNovoVeiculo').addEventListener('submit', adicionarVeiculo);
+    checkAuth();
 });
