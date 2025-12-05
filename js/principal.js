@@ -5,7 +5,8 @@
 // ===================================================================================
 
 // --- CONFIGURAÇÃO INICIAL ---
-const API_BASE_URL = 'http://localhost:3001/api'; 
+// Use o link do SEU Render (sem a barra / no final)
+const API_BASE_URL = 'https://vinicius-yuji-miaki-iiw24a.onrender.com/api';
 
 // --- FUNÇÕES DE UTILIDADE ---
 const parseJwt = (token) => {
@@ -199,7 +200,8 @@ const selecionarEExibirVeiculo = async (veiculoId, ui) => {
             // Corrige as barras do caminho (importante para o navegador)
             const correctedUrl = veiculo.imageUrl.replace(/\\/g, '/');
             // Monta a URL completa para a imagem
-            imgElement.src = `http://localhost:3001/${correctedUrl}`;
+// Substitua o localhost pelo link do Render aqui também
+imgElement.src = `https://vinicius-yuji-miaki-iiw24a.onrender.com/${correctedUrl}`;
         } else {
             // Usa uma imagem padrão se não houver upload
             imgElement.src = 'https://i.imgur.com/2s46e5k.png';
