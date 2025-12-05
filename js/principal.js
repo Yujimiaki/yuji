@@ -1,6 +1,6 @@
 // ARQUIVO: js/principal.js (SUBSTITUA TUDO)
 
-// SEU LINK DO RENDER
+// SEU RENDER
 const API_BASE_URL = 'https://vinicius-yuji-miaki-iiw24a.onrender.com/api';
 let veiculoAtual = null;
 
@@ -8,7 +8,7 @@ const showNotification = (msg, type) => {
     const area = document.getElementById('notification-area');
     document.getElementById('notification-message').textContent = msg;
     area.className = type + ' show';
-    setTimeout(() => area.className = '', 5000);
+    setTimeout(() => area.className = '', 4000);
 };
 
 // --- AUTH ---
@@ -26,37 +26,27 @@ const checkAuth = async () => {
 
 const realizarLogin = async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
     try {
         const res = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value })
         });
         const data = await res.json();
-        if (res.ok) {
-            localStorage.setItem('token', data.token);
-            checkAuth();
-            showNotification('Logado!', 'success');
-        } else showNotification(data.message, 'error');
-    } catch (e) { showNotification('Erro conexão.', 'error'); } 
-    finally { btn.textContent = "Entrar"; btn.disabled = false; }
+        if (res.ok) { localStorage.setItem('token', data.token); checkAuth(); }
+        else showNotification(data.message, 'error');
+    } catch (e) { showNotification('Erro conexão', 'error'); }
 };
 
 const realizarRegistro = async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
     try {
         const res = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email: document.getElementById('registerEmail').value, password: document.getElementById('registerPassword').value })
         });
-        const data = await res.json();
-        if (res.ok) {
-            showNotification('Criado! Faça login.', 'success');
-            document.getElementById('formRegister').reset();
-        } else showNotification(data.message, 'error');
-    } catch (e) { showNotification('Erro registro.', 'error'); } 
-    finally { btn.textContent = "Criar Conta"; btn.disabled = false; }
+        if (res.ok) { showNotification('Criado!', 'success'); document.getElementById('formRegister').reset(); }
+        else showNotification('Erro.', 'error');
+    } catch (e) { showNotification('Erro.', 'error'); }
 };
 
 // --- VEÍCULOS ---
@@ -67,40 +57,46 @@ const carregarVeiculos = async () => {
         const veiculos = await res.json();
         const lista = document.getElementById('listaVeiculosSidebar');
         lista.innerHTML = '';
-        if (veiculos.length === 0) lista.innerHTML = '<li style="padding:15px; color:#888;">Garagem vazia.</li>';
         veiculos.forEach(v => {
             const li = document.createElement('li');
             li.style.padding = '10px'; li.style.cursor = 'pointer'; li.style.borderBottom = '1px solid #eee';
-            li.innerHTML = `<i class="fas fa-car"></i> ${v.modelo} <small>(${v.placa})</small>`;
+            li.innerHTML = `<i class="fas fa-car"></i> ${v.modelo}`;
             li.onclick = () => selecionarVeiculo(v._id);
             lista.appendChild(li);
         });
     } catch (e) { console.error(e); }
 };
 
+// --- NOVA FUNÇÃO DE ADICIONAR (ENVIA JSON, NÃO FILE) ---
 const adicionarVeiculo = async (e) => {
     e.preventDefault();
     const btn = document.querySelector('#formNovoVeiculo button[type="submit"]');
-    btn.textContent = "Salvando (Aguarde)..."; btn.disabled = true;
+    btn.textContent = "Salvando..."; btn.disabled = true;
+
+    // Converte os dados do form para um objeto JSON simples
     const formData = new FormData(document.getElementById('formNovoVeiculo'));
+    const dados = Object.fromEntries(formData.entries());
+    
     const token = localStorage.getItem('token');
 
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
+            headers: { 
+                'Content-Type': 'application/json', // Importante: JSON!
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(dados) // Envia como texto
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Erro servidor');
+        if (!res.ok) throw new Error('Erro');
         
         document.getElementById('modalAdicionarVeiculo').close();
         document.getElementById('formNovoVeiculo').reset();
-        showNotification('Veículo criado com foto!', 'success');
+        showNotification('Veículo criado com sucesso!', 'success');
         carregarVeiculos();
-    } catch (e) { showNotification(e.message, 'error'); } 
-    finally { btn.textContent = "Adicionar"; btn.disabled = false; }
+    } catch (e) { showNotification('Erro ao criar.', 'error'); } 
+    finally { btn.textContent = "Salvar"; btn.disabled = false; }
 };
 
 const selecionarVeiculo = async (id) => {
@@ -108,38 +104,27 @@ const selecionarVeiculo = async (id) => {
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         veiculoAtual = await res.json();
-
-        document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
-        const donoEmail = veiculoAtual.owner.email || '???';
-        document.getElementById('info-proprietario').textContent = `Placa: ${veiculoAtual.placa} (Dono: ${donoEmail})`;
-        document.getElementById('info-tipo').textContent = veiculoAtual.tipo;
-        document.getElementById('info-ano').textContent = veiculoAtual.ano;
-        document.getElementById('info-cor').textContent = veiculoAtual.cor;
-
-        // --- EXIBIÇÃO SIMPLIFICADA DA IMAGEM ---
-        const img = document.getElementById('imagemVeiculo');
         
-        if (veiculoAtual.imageUrl) {
-            // Se tiver imagem no banco, usa ela direto (é um texto gigante Base64)
-            img.src = veiculoAtual.imageUrl;
-        } else {
-            // Se não tiver, usa o placeholder
-            img.src = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
-        }
+        document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
+        const dono = veiculoAtual.owner.email || '?';
+        document.getElementById('info-proprietario').textContent = `Dono: ${dono}`;
+        document.getElementById('info-detalhes').innerHTML = `Placa: ${veiculoAtual.placa} | Ano: ${veiculoAtual.ano} | Cor: ${veiculoAtual.cor} | Tipo: ${veiculoAtual.tipo}`;
 
+        // Imagem (Agora é direto, pois salvamos o link)
+        const img = document.getElementById('imagemVeiculo');
+        img.src = veiculoAtual.imageUrl || 'https://placehold.co/600x400?text=Sem+Foto';
+
+        // Botões Header
         const btnShare = document.getElementById('botaoCompartilharHeader');
         const btnRemove = document.getElementById('botaoRemoverHeader');
-        
         const newBtnShare = btnShare.cloneNode(true);
         const newBtnRemove = btnRemove.cloneNode(true);
         btnShare.parentNode.replaceChild(newBtnShare, btnShare);
         btnRemove.parentNode.replaceChild(newBtnRemove, btnRemove);
-
         newBtnShare.onclick = () => compartilharVeiculo(veiculoAtual._id);
         newBtnRemove.onclick = () => removerVeiculo(veiculoAtual._id);
 
         document.getElementById('btn-turbo').style.display = (veiculoAtual.tipo === 'Carro Esportivo') ? 'inline-flex' : 'none';
-
         document.getElementById('mensagem-selecione').style.display = 'none';
         document.getElementById('painelVeiculoSelecionado').style.display = 'block';
 
@@ -149,20 +134,17 @@ const selecionarVeiculo = async (id) => {
 };
 
 const compartilharVeiculo = async (id) => {
-    const email = prompt("Email para compartilhar:");
-    if (!email) return;
-
+    const email = prompt("E-mail para compartilhar:");
+    if(!email) return;
     const token = localStorage.getItem('token');
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}/share`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify({ email })
         });
-        const data = await res.json();
-        if(res.ok) showNotification('Compartilhado!', 'success');
-        else showNotification(data.message, 'warning');
-    } catch (e) { showNotification('Erro conexão.', 'error'); }
+        if(res.ok) showNotification('Sucesso!', 'success');
+        else showNotification('Erro/Não encontrado', 'error');
+    } catch(e) { showNotification('Erro.', 'error'); }
 };
 
 const removerVeiculo = async (id) => {
@@ -177,21 +159,19 @@ const removerVeiculo = async (id) => {
             document.getElementById('painelVeiculoSelecionado').style.display = 'none';
             document.getElementById('mensagem-selecione').style.display = 'block';
             carregarVeiculos();
-        } else showNotification('Erro ao remover', 'error');
-    } catch(e) { showNotification('Erro conexão', 'error'); }
+        }
+    } catch(e) { showNotification('Erro.', 'error'); }
 };
 
-// --- CONTROLES E MANUTENÇÃO (Igual) ---
+// Controles (Sem mudanças)
 const atualizarServidorStatus = async () => {
     if (!veiculoAtual) return;
     const token = localStorage.getItem('token');
     await fetch(`${API_BASE_URL}/veiculos/${veiculoAtual._id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ velocidade: veiculoAtual.velocidade, ligado: veiculoAtual.ligado })
     });
 };
-
 const atualizarInterfaceControle = () => {
     const btnLigar = document.getElementById('btn-ligar');
     const btnAcelerar = document.getElementById('btn-acelerar');
@@ -220,36 +200,32 @@ document.getElementById('btn-turbo').onclick = () => { if(veiculoAtual.ligado) {
 const carregarManutencoes = async (id) => {
     const token = localStorage.getItem('token');
     const ul = document.getElementById('lista-manutencoes');
-    ul.innerHTML = 'Carregando...';
+    ul.innerHTML = '...';
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}/manutencoes`, { headers: { 'Authorization': `Bearer ${token}` } });
         const lista = await res.json();
         ul.innerHTML = '';
-        if(lista.length === 0) ul.innerHTML = '<li style="color:#777;text-align:center;">Sem manutenções.</li>';
         lista.forEach(m => {
             const li = document.createElement('li');
             li.innerHTML = `<span>${m.descricaoServico}</span> <strong>R$ ${m.custo}</strong>`;
             ul.appendChild(li);
         });
-    } catch(e) { ul.innerHTML = 'Erro ao carregar.'; }
+    } catch(e) { ul.innerHTML = 'Erro.'; }
 };
 
 document.getElementById('formManutencao').onsubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const formData = new FormData(e.target);
-    const btn = e.target.querySelector('button'); btn.textContent = "..."; btn.disabled = true;
     await fetch(`${API_BASE_URL}/manutencoes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ descricaoServico: formData.get('descricaoServico'), custo: formData.get('custo'), veiculo: veiculoAtual._id })
     });
     e.target.reset();
-    btn.textContent = "Add"; btn.disabled = false;
     carregarManutencoes(veiculoAtual._id);
 };
 
-// --- START ---
+// Start
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('formLogin').onsubmit = realizarLogin;
     document.getElementById('formRegister').onsubmit = realizarRegistro;
