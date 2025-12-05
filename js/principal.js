@@ -1,9 +1,9 @@
 // ARQUIVO: js/principal.js (SUBSTITUA TUDO)
 
+// SEU LINK DO RENDER
 const API_BASE_URL = 'https://vinicius-yuji-miaki-iiw24a.onrender.com/api';
 let veiculoAtual = null;
 
-// --- SISTEMA DE NOTIFICAÇÃO ---
 const showNotification = (msg, type) => {
     const area = document.getElementById('notification-area');
     document.getElementById('notification-message').textContent = msg;
@@ -67,7 +67,7 @@ const carregarVeiculos = async () => {
         const veiculos = await res.json();
         const lista = document.getElementById('listaVeiculosSidebar');
         lista.innerHTML = '';
-        if (veiculos.length === 0) lista.innerHTML = '<li style="padding:15px; color:#888;">Nada aqui.</li>';
+        if (veiculos.length === 0) lista.innerHTML = '<li style="padding:15px; color:#888;">Garagem vazia.</li>';
         veiculos.forEach(v => {
             const li = document.createElement('li');
             li.style.padding = '10px'; li.style.cursor = 'pointer'; li.style.borderBottom = '1px solid #eee';
@@ -81,7 +81,7 @@ const carregarVeiculos = async () => {
 const adicionarVeiculo = async (e) => {
     e.preventDefault();
     const btn = document.querySelector('#formNovoVeiculo button[type="submit"]');
-    btn.textContent = "Salvando..."; btn.disabled = true;
+    btn.textContent = "Salvando (Aguarde)..."; btn.disabled = true;
     const formData = new FormData(document.getElementById('formNovoVeiculo'));
     const token = localStorage.getItem('token');
 
@@ -92,76 +92,41 @@ const adicionarVeiculo = async (e) => {
             body: formData
         });
 
-        // Tenta ler como texto primeiro para debug
-        const textResponse = await res.text();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Erro servidor');
         
-        try {
-            const data = JSON.parse(textResponse);
-            if (!res.ok) throw new Error(data.message || 'Erro servidor');
-            
-            document.getElementById('modalAdicionarVeiculo').close();
-            document.getElementById('formNovoVeiculo').reset();
-            showNotification('Veículo criado!', 'success');
-            carregarVeiculos();
-        } catch (jsonError) {
-            console.error("Erro Servidor (HTML):", textResponse);
-            throw new Error("O servidor falhou. Verifique o console.");
-        }
+        document.getElementById('modalAdicionarVeiculo').close();
+        document.getElementById('formNovoVeiculo').reset();
+        showNotification('Veículo criado com foto!', 'success');
+        carregarVeiculos();
     } catch (e) { showNotification(e.message, 'error'); } 
     finally { btn.textContent = "Adicionar"; btn.disabled = false; }
 };
-
-// ARQUIVO: js/principal.js (SUBSTITUA A FUNÇÃO selecionarVeiculo ou o arquivo todo se preferir)
-
-// ... (resto do código igual) ...
 
 const selecionarVeiculo = async (id) => {
     const token = localStorage.getItem('token');
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         veiculoAtual = await res.json();
-        
-        // Preenche Infos de Texto
+
         document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
-        const donoEmail = veiculoAtual.owner.email || 'Desconhecido';
+        const donoEmail = veiculoAtual.owner.email || '???';
         document.getElementById('info-proprietario').textContent = `Placa: ${veiculoAtual.placa} (Dono: ${donoEmail})`;
-        
         document.getElementById('info-tipo').textContent = veiculoAtual.tipo;
         document.getElementById('info-ano').textContent = veiculoAtual.ano;
         document.getElementById('info-cor').textContent = veiculoAtual.cor;
 
-        // --- CORREÇÃO DA IMAGEM ---
+        // --- EXIBIÇÃO SIMPLIFICADA DA IMAGEM ---
         const img = document.getElementById('imagemVeiculo');
         
-        // URL da Imagem de "Fallback" (Reserva) caso a original falhe
-        const imagemReserva = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
-
         if (veiculoAtual.imageUrl) {
-            // 1. Corrige barras invertidas (Windows) para barras normais
-            let caminhoLimpo = veiculoAtual.imageUrl.replace(/\\/g, '/');
-            
-            // 2. Garante que não tenha "uploads/" duplicado
-            // Se o banco salvou "uploads/carro.jpg", ok. Se salvou só "carro.jpg", a gente arruma.
-            if (!caminhoLimpo.includes('uploads/')) {
-                caminhoLimpo = 'uploads/' + caminhoLimpo;
-            }
-
-            // 3. Monta a URL completa do Render
-            // IMPORTANTE: O link da imagem NÃO leva "/api" no meio.
-            // Pega a base url (https://...com) removendo o final "/api"
-            const baseUrl = API_BASE_URL.replace('/api', ''); 
-            img.src = `${baseUrl}/${caminhoLimpo}`;
-
-            // 4. Se a imagem não existir (Render apagou), carrega a reserva
-            img.onerror = () => {
-                console.log("Imagem não encontrada no servidor (pode ter sido apagada pelo Render). Usando reserva.");
-                img.src = imagemReserva;
-            };
+            // Se tiver imagem no banco, usa ela direto (é um texto gigante Base64)
+            img.src = veiculoAtual.imageUrl;
         } else {
-            img.src = imagemReserva;
+            // Se não tiver, usa o placeholder
+            img.src = 'https://placehold.co/600x400/EEE/31343C?text=Sem+Foto';
         }
 
-        // --- BOTÕES E RESTO DO CÓDIGO (Igual ao anterior) ---
         const btnShare = document.getElementById('botaoCompartilharHeader');
         const btnRemove = document.getElementById('botaoRemoverHeader');
         
@@ -183,9 +148,8 @@ const selecionarVeiculo = async (id) => {
     } catch (e) { console.error(e); }
 };
 
-// ... (resto do código) ...
 const compartilharVeiculo = async (id) => {
-    const email = prompt("Email da pessoa (ela precisa ter conta no site):");
+    const email = prompt("Email para compartilhar:");
     if (!email) return;
 
     const token = localStorage.getItem('token');
@@ -195,16 +159,9 @@ const compartilharVeiculo = async (id) => {
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify({ email })
         });
-
-        const textResponse = await res.text();
-        try {
-            const data = JSON.parse(textResponse);
-            if(res.ok) showNotification('Compartilhado!', 'success');
-            else showNotification(data.message, 'warning');
-        } catch (jsonError) {
-            console.error("Erro HTML no Compartilhar:", textResponse);
-            showNotification("Erro interno no servidor.", 'error');
-        }
+        const data = await res.json();
+        if(res.ok) showNotification('Compartilhado!', 'success');
+        else showNotification(data.message, 'warning');
     } catch (e) { showNotification('Erro conexão.', 'error'); }
 };
 
@@ -224,7 +181,7 @@ const removerVeiculo = async (id) => {
     } catch(e) { showNotification('Erro conexão', 'error'); }
 };
 
-// --- FUNÇÕES DE CONTROLE (Sem alterações) ---
+// --- CONTROLES E MANUTENÇÃO (Igual) ---
 const atualizarServidorStatus = async () => {
     if (!veiculoAtual) return;
     const token = localStorage.getItem('token');
@@ -260,7 +217,6 @@ document.getElementById('btn-acelerar').onclick = () => { if(veiculoAtual.ligado
 document.getElementById('btn-frear').onclick = () => { if(veiculoAtual.ligado && veiculoAtual.velocidade > 0) { veiculoAtual.velocidade = Math.max(0, veiculoAtual.velocidade - 10); atualizarInterfaceControle(); atualizarServidorStatus(); } };
 document.getElementById('btn-turbo').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 50; showNotification('TURBO!', 'warning'); atualizarInterfaceControle(); atualizarServidorStatus(); } };
 
-// --- MANUTENÇÃO ---
 const carregarManutencoes = async (id) => {
     const token = localStorage.getItem('token');
     const ul = document.getElementById('lista-manutencoes');
