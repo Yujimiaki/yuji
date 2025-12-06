@@ -65,6 +65,8 @@
                 <!-- NAVEGAÇÃO POR ABAS -->
                 <div class="tab-container">
                     <button class="tab-button active" onclick="mudarAba('painel')"><i class="fas fa-tachometer-alt"></i> Controle</button>
+                    <!-- NOVA ABA SERVIÇOS -->
+                    <button class="tab-button" onclick="mudarAba('servicos')"><i class="fas fa-clipboard-list"></i> Catálogo de Serviços</button>
                     <button class="tab-button" onclick="mudarAba('manutencao')"><i class="fas fa-tools"></i> Manutenções</button>
                     <button class="tab-button" onclick="mudarAba('viagens')"><i class="fas fa-route"></i> Clima & Viagens</button>
                 </div>
@@ -88,22 +90,72 @@
                     </div>
                 </div>
 
-                <!-- ABA 2: MANUTENÇÕES (Nova) -->
+                <!-- NOVA ABA: CATÁLOGO DE SERVIÇOS -->
+                <div id="aba-servicos" class="aba-conteudo">
+                    <div class="grid-servicos">
+                        <!-- Serviço 1 -->
+                        <div class="card-servico" onclick="preencherServico('Troca de Óleo Premium', 250)">
+                            <div class="icone-servico"><i class="fas fa-oil-can"></i></div>
+                            <h3>Troca de Óleo</h3>
+                            <p>Óleo sintético de alta performance + filtro.</p>
+                            <span class="preco-servico">R$ 250,00</span>
+                            <button class="botao-mini">Agendar</button>
+                        </div>
+
+                        <!-- Serviço 2 -->
+                        <div class="card-servico" onclick="preencherServico('Revisão Geral', 450)">
+                            <div class="icone-servico"><i class="fas fa-wrench"></i></div>
+                            <h3>Revisão Geral</h3>
+                            <p>Checagem completa de freios, suspensão e fluidos.</p>
+                            <span class="preco-servico">R$ 450,00</span>
+                            <button class="botao-mini">Agendar</button>
+                        </div>
+
+                        <!-- Serviço 3 -->
+                        <div class="card-servico" onclick="preencherServico('Balanceamento & Pneus', 120)">
+                            <div class="icone-servico"><i class="fas fa-sync-alt"></i></div>
+                            <h3>Alinhamento 3D</h3>
+                            <p>Balanceamento das 4 rodas e geometria completa.</p>
+                            <span class="preco-servico">R$ 120,00</span>
+                            <button class="botao-mini">Agendar</button>
+                        </div>
+
+                        <!-- Serviço 4 -->
+                        <div class="card-servico" onclick="preencherServico('Lavagem Americana', 80)">
+                            <div class="icone-servico"><i class="fas fa-pump-soap"></i></div>
+                            <h3>Lavagem Detalhada</h3>
+                            <p>Limpeza interna e externa com cera.</p>
+                            <span class="preco-servico">R$ 80,00</span>
+                            <button class="botao-mini">Agendar</button>
+                        </div>
+
+                         <!-- Serviço 5 - Checkup de Viagem -->
+                         <div class="card-servico destaque" onclick="preencherViagemHelper()">
+                            <div class="icone-servico"><i class="fas fa-plane-departure"></i></div>
+                            <h3>Planejar Viagem</h3>
+                            <p>Quer viajar? Verifique o clima e defina o destino.</p>
+                            <span class="preco-servico">Grátis</span>
+                            <button class="botao-mini">Ir para Viagens</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 3: MANUTENÇÕES -->
                 <div id="aba-manutencao" class="aba-conteudo">
                     <div class="card">
                         <h3>Agendar/Registrar Manutenção</h3>
                         <form id="formManutencao" class="form-linha">
                             <div class="campo-grupo">
                                 <label>Data do Serviço:</label>
-                                <input type="date" name="data" required>
+                                <input type="date" id="inputDataManutencao" name="data" required>
                             </div>
                             <div class="campo-grupo">
                                 <label>Serviço:</label>
-                                <input type="text" name="descricaoServico" placeholder="Ex: Troca de óleo" required>
+                                <input type="text" id="inputDescManutencao" name="descricaoServico" placeholder="Ex: Troca de óleo" required>
                             </div>
                             <div class="campo-grupo">
                                 <label>Valor:</label>
-                                <input type="number" name="custo" placeholder="R$ 0.00" required>
+                                <input type="number" id="inputCustoManutencao" name="custo" placeholder="R$ 0.00" required>
                             </div>
                             <button type="submit" class="botao-info" style="align-self: flex-end;">Salvar</button>
                         </form>
@@ -113,7 +165,7 @@
                     </div>
                 </div>
 
-                <!-- ABA 3: CLIMA E VIAGEM (Nova com OpenWeather) -->
+                <!-- ABA 4: CLIMA E VIAGEM -->
                 <div id="aba-viagens" class="aba-conteudo">
                     <div class="grid-layout">
                         <!-- Clima -->
@@ -144,7 +196,6 @@
                                 <label>Notas:</label>
                                 <input type="text" name="descricao" placeholder="Obs...">
                                 
-                                <!-- Campo escondido para salvar o clima no momento do agendamento -->
                                 <input type="hidden" name="previsaoClima" id="inputClimaViagem">
 
                                 <button type="submit" class="botao-sucesso" style="width:100%;">Agendar Viagem</button>
@@ -169,8 +220,8 @@
             <div class="form-grid">
                 <div class="form-item span-2">
                     <label>Link da Imagem (URL):</label> 
-                    <input type="url" name="imagemUrl" placeholder="http://exemplo.com/carro.jpg">
-                    <small style="color:red; font-size:0.8em;">* Dica: Use botão direito na imagem do Google > "Copiar endereço da imagem". A imagem deve terminar em .jpg ou .png para funcionar bem.</small>
+                    <input type="url" name="imagemUrl" placeholder="Cole o link da imagem aqui">
+                    <small style="color:#666; font-size:0.8em;">* Recomendado links terminados em .jpg ou .png</small>
                 </div>
                 <div class="form-item span-2">
                     <label>Tipo:</label>
@@ -195,21 +246,39 @@
 
     <script type="module" src="js/principal.js"></script>
     
-    <!-- Script Inline Simples para Controle de Abas -->
+    <!-- Lógica Simples de Troca de Abas -->
     <script>
         function mudarAba(abaNome) {
-            // Esconde todas as abas
             document.querySelectorAll('.aba-conteudo').forEach(div => div.classList.remove('active'));
-            // Remove active dos botoes
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             
-            // Mostra a selecionada
             document.getElementById('aba-' + abaNome).classList.add('active');
-            // Acha o botão clicado e ativa (simulação visual simples)
+            
             const botoes = document.querySelectorAll('.tab-button');
+            // Gambiarra simples para mapear botão ao indice, em app real usaria IDs
             if(abaNome === 'painel') botoes[0].classList.add('active');
-            if(abaNome === 'manutencao') botoes[1].classList.add('active');
-            if(abaNome === 'viagens') botoes[2].classList.add('active');
+            if(abaNome === 'servicos') botoes[1].classList.add('active');
+            if(abaNome === 'manutencao') botoes[2].classList.add('active');
+            if(abaNome === 'viagens') botoes[3].classList.add('active');
+        }
+
+        // FUNÇÃO INTELIGENTE DO CATÁLOGO DE SERVIÇOS
+        // Ao clicar no serviço, vai pra aba de manutenção e preenche sozinho
+        function preencherServico(nomeServico, valor) {
+            mudarAba('manutencao');
+            document.getElementById('inputDescManutencao').value = nomeServico;
+            document.getElementById('inputCustoManutencao').value = valor;
+            
+            // Define data para Hoje
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('inputDataManutencao').value = hoje;
+            
+            // Avisa o usuário (usando a função de notificação global acessível via window se necessário, ou alert simples)
+            // Aqui vamos confiar no visual da troca de aba
+        }
+
+        function preencherViagemHelper() {
+            mudarAba('viagens');
         }
     </script>
 </body>
