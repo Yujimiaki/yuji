@@ -1,4 +1,6 @@
 // ARQUIVO: js/principal.js
+
+// URL da API (Backend no Render)
 const API_BASE_URL = 'https://vinicius-yuji-miaki-iiw24a.onrender.com/api'; 
 const WEATHER_API_KEY = '569ee28c1908ad6eaadb431e635166be'; 
 
@@ -33,7 +35,7 @@ const realizarLogin = async (e) => {
         });
         const data = await res.json();
         if (res.ok) { localStorage.setItem('token', data.token); checkAuth(); }
-        else showNotification(data.message, 'error');
+        else showNotification(data.message || 'Erro Login', 'error');
     } catch (e) { showNotification('Erro conexão', 'error'); }
 };
 
@@ -44,33 +46,34 @@ const realizarRegistro = async (e) => {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email: document.getElementById('registerEmail').value, password: document.getElementById('registerPassword').value })
         });
-        if (res.ok) { showNotification('Criado!', 'success'); document.getElementById('formRegister').reset(); }
-        else showNotification('Erro.', 'error');
+        if (res.ok) { showNotification('Conta criada!', 'success'); document.getElementById('formRegister').reset(); }
+        else showNotification('Erro no registro.', 'error');
     } catch (e) { showNotification('Erro.', 'error'); }
 };
 
 // --- VEÍCULOS ---
 const carregarVeiculos = async () => {
     const token = localStorage.getItem('token');
+    const ul = document.getElementById('listaVeiculosSidebar');
+    ul.innerHTML = '<li>Carregando...</li>';
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos`, { headers: { 'Authorization': `Bearer ${token}` } });
         const veiculos = await res.json();
-        const lista = document.getElementById('listaVeiculosSidebar');
-        lista.innerHTML = '';
+        ul.innerHTML = '';
         veiculos.forEach(v => {
             const li = document.createElement('li');
-            li.style.padding = '10px'; li.style.cursor = 'pointer'; li.style.borderBottom = '1px solid #eee';
-            li.innerHTML = `<i class="fas fa-car"></i> ${v.modelo} <small>(${v.placa})</small>`;
+            li.style = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 8px;';
+            li.innerHTML = `<i class="fas fa-car-side"></i> <div><strong>${v.modelo}</strong><br><small>${v.placa}</small></div>`;
             li.onclick = () => selecionarVeiculo(v._id);
-            lista.appendChild(li);
+            ul.appendChild(li);
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); ul.innerHTML = 'Erro de conexão'; }
 };
 
 const adicionarVeiculo = async (e) => {
     e.preventDefault();
     const btn = document.querySelector('#formNovoVeiculo button[type="submit"]');
-    btn.textContent = "Salvando..."; btn.disabled = true;
+    btn.disabled = true; btn.innerText = 'Aguarde...';
 
     const formData = new FormData(document.getElementById('formNovoVeiculo'));
     const dados = Object.fromEntries(formData.entries());
@@ -78,72 +81,82 @@ const adicionarVeiculo = async (e) => {
 
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(dados)
         });
-        if (!res.ok) throw new Error('Erro');
-        
-        document.getElementById('modalAdicionarVeiculo').close();
-        document.getElementById('formNovoVeiculo').reset();
-        showNotification('Veículo adicionado!', 'success');
-        carregarVeiculos();
-    } catch (e) { showNotification('Erro ao criar.', 'error'); } 
-    finally { btn.textContent = "Salvar"; btn.disabled = false; }
+        if(res.ok) {
+            document.getElementById('modalAdicionarVeiculo').close();
+            document.getElementById('formNovoVeiculo').reset();
+            showNotification('Veículo adicionado!', 'success');
+            carregarVeiculos();
+        } else { throw new Error('Falha ao criar'); }
+    } catch (e) { showNotification('Erro ao criar veículo.', 'error'); } 
+    finally { btn.disabled = false; btn.innerText = 'Salvar'; }
 };
 
 const selecionarVeiculo = async (id) => {
     const token = localStorage.getItem('token');
     try {
+        // Busca Detalhes
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         veiculoAtual = await res.json();
         
+        // Atualiza Header
         document.getElementById('info-modelo-placa').textContent = veiculoAtual.modelo;
-        const dono = veiculoAtual.owner.email || '?';
-        document.getElementById('info-proprietario').textContent = `Dono: ${dono}`;
-        document.getElementById('info-detalhes').textContent = `${veiculoAtual.tipo} - ${veiculoAtual.marca} (${veiculoAtual.ano}) - Placa: ${veiculoAtual.placa}`;
+        const emailDono = veiculoAtual.owner.email || '?';
+        document.getElementById('info-proprietario').innerText = `<small>${emailDono}</small>`;
+        document.getElementById('info-detalhes').textContent = `${veiculoAtual.marca} (${veiculoAtual.ano}) - ${veiculoAtual.placa}`;
 
         const img = document.getElementById('imagemVeiculo');
-        img.src = veiculoAtual.imageUrl && veiculoAtual.imageUrl.trim() !== "" ? veiculoAtual.imageUrl : 'https://via.placeholder.com/300x200?text=Sem+Foto';
+        img.src = (veiculoAtual.imageUrl && veiculoAtual.imageUrl.startsWith('http')) 
+            ? veiculoAtual.imageUrl 
+            : 'https://via.placeholder.com/300x200?text=Sem+Foto';
 
+        // Atualiza Botoes Header
         const btnShare = document.getElementById('botaoCompartilharHeader');
         const btnRemove = document.getElementById('botaoRemoverHeader');
-        const newBtnShare = btnShare.cloneNode(true);
-        const newBtnRemove = btnRemove.cloneNode(true);
-        btnShare.parentNode.replaceChild(newBtnShare, btnShare);
-        btnRemove.parentNode.replaceChild(newBtnRemove, btnRemove);
-        newBtnShare.onclick = () => compartilharVeiculo(veiculoAtual._id);
-        newBtnRemove.onclick = () => removerVeiculo(veiculoAtual._id);
+        
+        const cloneShare = btnShare.cloneNode(true);
+        const cloneRemove = btnRemove.cloneNode(true);
+        btnShare.parentNode.replaceChild(cloneShare, btnShare);
+        btnRemove.parentNode.replaceChild(cloneRemove, btnRemove);
+
+        cloneShare.onclick = () => compartilharVeiculo(veiculoAtual._id);
+        cloneRemove.onclick = () => removerVeiculo(veiculoAtual._id);
 
         document.getElementById('btn-turbo').style.display = (veiculoAtual.tipo === 'Carro Esportivo') ? 'inline-flex' : 'none';
+
+        // Mostra Painel
         document.getElementById('mensagem-selecione').style.display = 'none';
         document.getElementById('painelVeiculoSelecionado').style.display = 'block';
 
+        // Atualiza estados
         atualizarInterfaceControle();
-        
-        // Carrega as abas extras
         carregarManutencoes(id);
         carregarViagens(id);
+        
+        // Por padrão abre na aba de painel
+        document.querySelector('.tab-button').click(); // Clica na primeira aba
 
     } catch (e) { console.error(e); }
 };
 
 const removerVeiculo = async (id) => {
-    if(!confirm("Remover este veículo?")) return;
+    if(!confirm("Tem certeza que deseja apagar este veículo e seus dados?")) return;
     const token = localStorage.getItem('token');
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         if(res.ok) {
-            showNotification('Removido.', 'info');
+            showNotification('Veículo removido.', 'info');
             document.getElementById('painelVeiculoSelecionado').style.display = 'none';
             document.getElementById('mensagem-selecione').style.display = 'block';
             carregarVeiculos();
         }
-    } catch(e) { showNotification('Erro.', 'error'); }
+    } catch(e) { showNotification('Erro ao remover.', 'error'); }
 };
 
 const compartilharVeiculo = async (id) => {
-    const email = prompt("E-mail para compartilhar:");
+    const email = prompt("Digite o e-mail do usuário para compartilhar:");
     if(!email) return;
     const token = localStorage.getItem('token');
     try {
@@ -151,133 +164,146 @@ const compartilharVeiculo = async (id) => {
             method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify({ email })
         });
-        if(res.ok) showNotification('Compartilhado!', 'success');
-        else showNotification('Erro.', 'error');
+        if(res.ok) showNotification('Compartilhado com sucesso!', 'success');
+        else showNotification('Erro ou e-mail inválido.', 'error');
     } catch(e) { showNotification('Erro.', 'error'); }
 };
 
-// --- PAINEL ---
-const atualizarServidorStatus = async () => {
-    if (!veiculoAtual) return;
-    const token = localStorage.getItem('token');
-    await fetch(`${API_BASE_URL}/veiculos/${veiculoAtual._id}/status`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ velocidade: veiculoAtual.velocidade, ligado: veiculoAtual.ligado })
-    });
-};
-
+// --- CONTROLE PAINEL ---
 const atualizarInterfaceControle = () => {
+    if(!veiculoAtual) return;
     const btnLigar = document.getElementById('btn-ligar');
-    const btnAcelerar = document.getElementById('btn-acelerar');
-    const btnFrear = document.getElementById('btn-frear');
     const display = document.getElementById('valor-velocidade');
     const ponteiro = document.getElementById('ponteiro-velocidade');
+    const btns = [document.getElementById('btn-acelerar'), document.getElementById('btn-frear')];
 
-    if (veiculoAtual.ligado) {
-        btnLigar.textContent = "DESLIGAR"; btnLigar.className = "botao-perigo";
-        btnAcelerar.disabled = false; btnFrear.disabled = false;
+    if(veiculoAtual.ligado) {
+        btnLigar.innerText = "DESLIGAR"; btnLigar.className = "botao-perigo";
+        btns.forEach(b => b.disabled = false);
     } else {
-        btnLigar.textContent = "LIGAR"; btnLigar.className = "botao-sucesso";
-        btnAcelerar.disabled = true; btnFrear.disabled = true;
+        btnLigar.innerText = "LIGAR"; btnLigar.className = "botao-sucesso";
+        btns.forEach(b => b.disabled = true);
         veiculoAtual.velocidade = 0;
     }
+    
     display.textContent = veiculoAtual.velocidade;
-    const angulo = (veiculoAtual.velocidade / 220) * 180 - 90;
+    // Calc angulo
+    const angulo = (veiculoAtual.velocidade / 220) * 180 - 90; 
     ponteiro.style.transform = `rotate(${Math.min(angulo, 90)}deg)`;
 };
 
-document.getElementById('btn-ligar').onclick = () => { veiculoAtual.ligado = !veiculoAtual.ligado; atualizarInterfaceControle(); atualizarServidorStatus(); };
-document.getElementById('btn-acelerar').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 10; atualizarInterfaceControle(); atualizarServidorStatus(); } };
-document.getElementById('btn-frear').onclick = () => { if(veiculoAtual.ligado && veiculoAtual.velocidade > 0) { veiculoAtual.velocidade = Math.max(0, veiculoAtual.velocidade - 10); atualizarInterfaceControle(); atualizarServidorStatus(); } };
-document.getElementById('btn-turbo').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 50; showNotification('TURBO!', 'warning'); atualizarInterfaceControle(); atualizarServidorStatus(); } };
+const atualizarServidorStatus = async () => {
+    if(!veiculoAtual) return;
+    const token = localStorage.getItem('token');
+    await fetch(`${API_BASE_URL}/veiculos/${veiculoAtual._id}/status`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ ligado: veiculoAtual.ligado, velocidade: veiculoAtual.velocidade })
+    });
+};
 
-// --- MANUTENÇÕES ---
+document.getElementById('btn-ligar').onclick = () => { veiculoAtual.ligado = !veiculoAtual.ligado; atualizarInterfaceControle(); atualizarServidorStatus(); };
+document.getElementById('btn-acelerar').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 10; atualizarInterfaceControle(); atualizarServidorStatus(); }};
+document.getElementById('btn-frear').onclick = () => { if(veiculoAtual.ligado && veiculoAtual.velocidade > 0) { veiculoAtual.velocidade -= 10; atualizarInterfaceControle(); atualizarServidorStatus(); }};
+document.getElementById('btn-turbo').onclick = () => { if(veiculoAtual.ligado) { veiculoAtual.velocidade += 50; showNotification('TURBO!!!', 'warning'); atualizarInterfaceControle(); atualizarServidorStatus(); }};
+
+// --- MANUTENCOES ---
 const carregarManutencoes = async (id) => {
     const token = localStorage.getItem('token');
     const ul = document.getElementById('lista-manutencoes');
-    ul.innerHTML = '<li>Carregando...</li>';
     try {
         const res = await fetch(`${API_BASE_URL}/veiculos/${id}/manutencoes`, { headers: { 'Authorization': `Bearer ${token}` } });
         const lista = await res.json();
         ul.innerHTML = '';
-        if(lista.length === 0) { ul.innerHTML = '<li style="color:#777; padding:10px;">Sem manutenções.</li>'; return; }
+        if(lista.length === 0) { ul.innerHTML = '<li style="color:#777; text-align:center; padding:10px;">Sem manutenções.</li>'; return; }
+        
         lista.forEach(m => {
             const dataFmt = new Date(m.data).toLocaleDateString('pt-BR');
-            const isFuturo = new Date(m.data) > new Date();
-            const estilo = isFuturo ? 'border-left: 4px solid orange; background:#fff8e1;' : 'border-left: 4px solid green;';
+            const futuro = new Date(m.data) > new Date();
+            const cor = futuro ? 'border-left: 4px solid #ffc107' : 'border-left: 4px solid #28a745';
+            
             const li = document.createElement('li');
-            li.style = `padding: 10px; margin-bottom: 5px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px; display:flex; justify-content:space-between; ${estilo}`;
-            li.innerHTML = `<div><strong>${m.descricaoServico}</strong> <br><small>Data: ${dataFmt}</small></div><div style="font-weight:bold;">R$ ${m.custo}</div>`;
+            li.style = `padding: 10px; margin-bottom:5px; background:#f9f9f9; box-shadow:0 1px 2px rgba(0,0,0,0.1); border-radius:4px; ${cor}`;
+            li.innerHTML = `<div style="display:flex; justify-content:space-between;">
+                <div><strong>${m.descricaoServico}</strong> <br><small>Data: ${dataFmt}</small></div>
+                <div style="font-weight:bold;">R$ ${m.custo}</div>
+            </div>`;
             ul.appendChild(li);
         });
-    } catch(e) { ul.innerHTML = 'Erro ao carregar.'; }
+    } catch(e) { console.error(e); }
 };
 
 document.getElementById('formManutencao').onsubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const formData = new FormData(e.target);
+    const fd = new FormData(e.target);
+    const dados = { descricaoServico: fd.get('descricaoServico'), custo: fd.get('custo'), data: fd.get('data'), veiculo: veiculoAtual._id };
+    
     try {
         const res = await fetch(`${API_BASE_URL}/manutencoes`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ descricaoServico: formData.get('descricaoServico'), custo: formData.get('custo'), data: formData.get('data'), veiculo: veiculoAtual._id })
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify(dados)
         });
-        if(res.ok) { showNotification('Salvo!', 'success'); e.target.reset(); carregarManutencoes(veiculoAtual._id); }
-        else throw new Error();
-    } catch(err) { showNotification('Erro ao salvar.', 'error'); }
+        if(res.ok) {
+            showNotification('Manutenção Agendada!', 'success');
+            e.target.reset();
+            carregarManutencoes(veiculoAtual._id);
+        } else { showNotification('Erro ao salvar.', 'error'); }
+    } catch(e) { showNotification('Erro.', 'error'); }
 };
 
-// --- VIAGENS E CLIMA ---
+// --- CLIMA E VIAGEM ---
 window.buscarClima = async () => {
     const cidade = document.getElementById('cidadeClima').value;
-    if(!cidade) return showNotification("Digite cidade", "error");
+    if(!cidade) return showNotification("Digite a cidade", "info");
     try {
         const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${WEATHER_API_KEY}&units=metric&lang=pt_br`);
         if(!res.ok) throw new Error();
         const dados = await res.json();
         
-        document.getElementById('clima-cidade').textContent = `${dados.name}`;
-        document.getElementById('clima-temp').textContent = `${Math.round(dados.main.temp)}°C`;
+        document.getElementById('clima-cidade').textContent = dados.name;
+        document.getElementById('clima-temp').textContent = Math.round(dados.main.temp) + "°C";
         document.getElementById('clima-desc').textContent = dados.weather[0].description;
         document.getElementById('clima-icone').src = `https://openweathermap.org/img/wn/${dados.weather[0].icon}@2x.png`;
         document.getElementById('resultadoClima').style.display = 'block';
-
+        
+        // Auto-preenche viagem
         document.getElementById('inputDestinoViagem').value = dados.name;
         document.getElementById('inputClimaViagem').value = `${dados.weather[0].description}, ${Math.round(dados.main.temp)}°C`;
-    } catch (error) { showNotification("Erro API Clima.", "error"); }
+    } catch(e) { showNotification("Erro ao buscar clima.", "error"); }
 };
 
 const carregarViagens = async (id) => {
     const token = localStorage.getItem('token');
     const ul = document.getElementById('lista-viagens');
-    ul.innerHTML = '<li>Carregando...</li>';
     try {
-        const res = await fetch(`${API_BASE_URL}/veiculos/${id}/viagens`, { headers: {'Authorization': `Bearer ${token}`} });
+        const res = await fetch(`${API_BASE_URL}/veiculos/${id}/viagens`, { headers: { 'Authorization': `Bearer ${token}` } });
         const viagens = await res.json();
         ul.innerHTML = '';
-        if(viagens.length === 0) { ul.innerHTML = '<li style="padding:10px; color:#888;">Nenhuma viagem.</li>'; return; }
+        if(viagens.length === 0) { ul.innerHTML = '<li style="text-align:center; padding:10px; color:#888;">Nenhuma viagem planejada.</li>'; return; }
         viagens.forEach(v => {
-            const dataFmt = new Date(v.dataIda).toLocaleDateString('pt-BR');
             const li = document.createElement('li');
-            li.style = 'background: #f1f1f1; padding:10px; margin-bottom:8px; border-radius:5px; border-left: 4px solid #007bff; list-style:none;';
-            li.innerHTML = `<strong>${v.destino}</strong> (${dataFmt}) <br><small>Clima: ${v.previsaoClima || '?'}</small> <span style="font-style:italic">"${v.descricao}"</span>`;
+            li.style = 'padding:10px; background:#f1f1f1; margin-bottom:5px; border-radius:5px; list-style:none;';
+            li.innerHTML = `<strong>✈️ ${v.destino}</strong> (${new Date(v.dataIda).toLocaleDateString()}) <br> <small>${v.previsaoClima || ''}</small>`;
             ul.appendChild(li);
         });
-    } catch(e) { ul.innerHTML = 'Erro.'; }
+    } catch(e){console.error(e);}
 };
 
 document.getElementById('formViagem').onsubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const formData = new FormData(e.target);
+    const fd = new FormData(e.target);
+    const dados = { destino: fd.get('destino'), dataIda: fd.get('dataIda'), descricao: fd.get('descricao'), previsaoClima: fd.get('previsaoClima'), veiculo: veiculoAtual._id };
+    
     try {
         const res = await fetch(`${API_BASE_URL}/viagens`, {
-            method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-            body: JSON.stringify({ destino: formData.get('destino'), dataIda: formData.get('dataIda'), descricao: formData.get('descricao'), previsaoClima: formData.get('previsaoClima'), veiculo: veiculoAtual._id })
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify(dados)
         });
-        if(res.ok) { showNotification('Viagem Salva!', 'success'); e.target.reset(); document.getElementById('resultadoClima').style.display = 'none'; carregarViagens(veiculoAtual._id); }
-        else throw new Error();
-    } catch(e) { showNotification('Erro.', 'error'); }
+        if(res.ok) {
+            showNotification('Boa viagem!', 'success');
+            e.target.reset(); document.getElementById('resultadoClima').style.display = 'none';
+            carregarViagens(veiculoAtual._id);
+        } else { showNotification('Erro.', 'error'); }
+    } catch(e){ showNotification('Erro.', 'error'); }
 };
 
 // Start

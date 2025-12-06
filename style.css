@@ -1,96 +1,85 @@
-/* ARQUIVO: style.css (COPIE TODO O CONTEÚDO PARA GARANTIR) */
+/* --- style.css --- */
 :root {
   --cor-primaria: #007bff;
-  --cor-secundaria: #6c757d;
   --cor-sucesso: #28a745;
   --cor-perigo: #dc3545;
   --cor-aviso: #ffc107;
   --cor-info: #17a2b8;
   --cor-fundo: #f0f2f5;
-  --cor-texto: #212121;
   --border-radius: 8px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Poppins', sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); line-height: 1.6; }
+body { font-family: 'Poppins', sans-serif; background-color: var(--cor-fundo); color: #333; line-height: 1.6; }
 
-/* Layout Geral */
+/* Layout e Containers */
 #app-container { display: flex; min-height: 100vh; }
-#sidebar { width: 280px; background: #fff; padding: 20px; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 15px; }
-#main-content { flex: 1; padding: 30px; }
+#sidebar { width: 260px; background: #fff; padding: 20px; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
+#main-content { flex: 1; padding: 20px; overflow-y: auto; }
+.card { background: #fff; border-radius: var(--border-radius); padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.auth-box { max-width: 400px; margin: 50px auto; text-align: center; }
 
-/* Cards */
-.card { background: #fff; border-radius: var(--border-radius); padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-.auth-box { max-width: 400px; margin: 10% auto; text-align: center; }
-
-/* Botoes e Inputs */
-button { padding: 12px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #fff; transition: 0.2s; font-size: 1rem; }
-button:hover { opacity: 0.9; transform: translateY(-1px); }
-button:disabled { background: #ccc !important; cursor: not-allowed; }
-input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 1rem; }
-
+/* Inputs e Botoes */
+input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; }
+button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: #fff; font-weight: bold; transition: 0.2s; }
+button:hover { opacity: 0.9; }
 .botao-sucesso { background: var(--cor-sucesso); }
 .botao-perigo { background: var(--cor-perigo); }
 .botao-info { background: var(--cor-info); }
 .botao-aviso { background: var(--cor-aviso); color: #000; }
-.botao-cancelar { background: var(--cor-secundaria); }
-.botao-sidebar-add { width: 100%; background: var(--cor-sucesso); padding: 12px; }
+.botao-cancelar { background: #6c757d; }
+.botao-sidebar-add { background: var(--cor-sucesso); width: 100%; }
 
-/* Header Veiculo */
+/* Veiculo Header */
 .vehicle-header { display: flex; gap: 20px; align-items: center; }
-#imagemVeiculo { width: 150px; height: 100px; object-fit: cover; border-radius: 8px; background: #eee; border: 1px solid #ccc; }
+#imagemVeiculo { width: 160px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; background: #eee; }
 
-/* ABAS */
-.tab-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 0; flex-wrap: wrap; }
+/* === ABAS E CONTEÚDO (ESSENCIAL PARA FUNCIONAR) === */
+.tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; gap: 5px; flex-wrap: wrap; }
 .tab-button {
-    background: none; color: #666; border-radius: 8px 8px 0 0; padding: 10px 20px; font-size: 0.9rem; margin-bottom: -2px; border: 1px solid transparent;
+    background: #f1f1f1; color: #555; border: 1px solid transparent; 
+    border-radius: 8px 8px 0 0; margin-bottom: -2px; padding: 10px 15px;
 }
-.tab-button:hover { background: #e9ecef; color: var(--cor-primaria); }
+.tab-button:hover { background: #e2e6ea; }
 .tab-button.active {
-    background: #fff; color: var(--cor-primaria); border: 2px solid #ddd; border-bottom: 2px solid #fff; font-weight: bold;
+    background: #fff; color: var(--cor-primaria); border: 2px solid #ddd; border-bottom: 2px solid #fff; z-index: 1;
 }
-.aba-conteudo { display: none; animation: fadeIn 0.3s; }
-.aba-conteudo.active { display: block; }
 
-/* --- NOVO CSS PARA SERVIÇOS (O que você pediu) --- */
-.grid-servicos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.aba-conteudo { display: none; /* Escondido por padrão */ }
+.aba-conteudo.active { display: block; animation: fadeUp 0.3s ease; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === GRID DE SERVIÇOS (PARA A ABA NOSSOS SERVIÇOS) === */
+.grid-servicos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
 .card-servico {
-    background: #fff; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #eee; transition: all 0.3s; cursor: pointer; position: relative;
+    background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; text-align: center;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
 }
-.card-servico:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,123,255,0.2); border-color: var(--cor-primaria); }
-.icone-servico { font-size: 2.5rem; color: var(--cor-primaria); margin-bottom: 15px; }
-.card-servico h3 { font-size: 1.1rem; margin-bottom: 5px; }
-.card-servico p { font-size: 0.85rem; color: #666; margin-bottom: 15px; }
-.preco-servico { display: block; font-weight: bold; font-size: 1.2rem; color: var(--cor-sucesso); margin-bottom: 10px; }
-.card-servico.destaque .icone-servico { color: #ff9800; }
-.botao-mini { font-size: 0.8rem; padding: 5px 10px; background: var(--cor-primaria); width: auto; display: inline-block; }
+.card-servico:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--cor-primaria); }
+.icone-servico { font-size: 2rem; color: var(--cor-primaria); margin-bottom: 10px; }
+.preco-servico { display: block; font-weight: bold; color: var(--cor-sucesso); font-size: 1.2em; margin: 10px 0; }
+.botao-mini { font-size: 0.8rem; padding: 5px 10px; background: var(--cor-primaria); }
 
-/* Formulários, Grids, etc (Antigo Mantido) */
-.form-linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-.campo-grupo { flex: 1; min-width: 150px; display: flex; flex-direction: column; }
+/* Listas, Manutenções, etc */
 .lista-clean { list-style: none; padding: 0; }
+.form-linha { display: flex; gap: 10px; flex-wrap: wrap; }
+.campo-grupo { flex: 1; min-width: 140px; display: flex; flex-direction: column; }
+.velocimetro-wrapper { margin: 10px auto; width: 100px; } 
 
-.velocimetro-wrapper { margin: 20px 0; }
-.velocimetro { width: 200px; height: 100px; border-radius: 100px 100px 0 0; background: linear-gradient(90deg, #28a745, #ffc107, #dc3545); margin: 0 auto; position: relative; overflow: hidden; }
-.ponteiro { width: 4px; height: 90px; background: #333; position: absolute; bottom: 0; left: 50%; transform-origin: bottom center; transform: rotate(-90deg); transition: transform 0.5s; z-index: 2; }
-.display-velocidade { font-size: 2em; font-weight: bold; margin-top: 10px; }
-.controles { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
-
-.grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-dialog { border: none; padding: 0; border-radius: 12px; width: 600px; max-width: 90vw; margin: auto; }
-dialog::backdrop { background: rgba(0,0,0,0.5); }
-dialog form { padding: 25px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+/* Dialog */
+dialog { width: 500px; max-width: 90%; margin: auto; border: none; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+dialog form { padding: 20px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .span-2 { grid-column: span 2; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.modal-actions { margin-top: 15px; text-align: right; }
 
-#notification-area { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 8px; color: #fff; display: none; z-index: 999; }
-#notification-area.show { display: block; animation: slideIn 0.3s; }
+#notification-area { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 5px; color:#fff; display:none; z-index: 1000; }
+#notification-area.show { display:block; }
 #notification-area.success { background: var(--cor-sucesso); }
 #notification-area.error { background: var(--cor-perigo); }
 #notification-area.info { background: var(--cor-info); }
-#notification-area.warning { background: var(--cor-aviso); color: #000; }
-@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-@media(max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } .vehicle-header { flex-direction: column; text-align: center; } }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garagem Virtual V3</title>
+    <title>Garagem Virtual V3 - Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -11,7 +11,7 @@
 <body>
     <div id="notification-area"><span id="notification-message"></span><button class="close-btn">×</button></div>
 
-    <!-- LOGIN -->
+    <!-- TELA DE LOGIN -->
     <div id="auth-container" class="card auth-box">
         <h2><i class="fas fa-warehouse"></i> Garagem V3</h2>
         <form id="formLogin">
@@ -29,7 +29,7 @@
         </form>
     </div>
 
-    <!-- APP -->
+    <!-- APLICAÇÃO PRINCIPAL -->
     <div id="app-container" style="display: none;">
         <aside id="sidebar">
             <div class="sidebar-header"><h1>Garagem V3</h1></div>
@@ -42,38 +42,36 @@
 
         <main id="main-content">
             <div id="mensagem-selecione" class="card" style="text-align: center; padding: 50px;">
-                <h2>Selecione um veículo na lista para começar</h2>
+                <h2><i class="fas fa-arrow-left"></i> Selecione um veículo na lista para começar</h2>
             </div>
 
-            <!-- WRAPPER DO VEÍCULO SELECIONADO -->
+            <!-- ÁREA DO VEÍCULO SELECIONADO -->
             <div id="painelVeiculoSelecionado" style="display: none;">
                 
-                <!-- CABEÇALHO DO CARRO -->
+                <!-- CABEÇALHO COM FOTO E DADOS -->
                 <div class="card vehicle-header">
-                    <img id="imagemVeiculo" src="" alt="Foto do Veículo" onerror="this.src='https://via.placeholder.com/300x200?text=Sem+Foto+V%C3%A1lida';">
+                    <img id="imagemVeiculo" src="" alt="Carro" onerror="this.src='https://via.placeholder.com/300x200?text=Sem+Foto';">
                     <div id="informacoesVeiculo">
                         <h2 id="info-modelo-placa">Modelo</h2>
                         <p id="info-proprietario"></p>
                         <p id="info-detalhes"></p>
                         <div style="margin-top: 10px;">
-                            <button id="botaoCompartilharHeader" class="botao-info"><i class="fas fa-share-alt"></i></button>
-                            <button id="botaoRemoverHeader" class="botao-perigo"><i class="fas fa-trash"></i></button>
+                            <button id="botaoCompartilharHeader" class="botao-info" title="Compartilhar"><i class="fas fa-share-alt"></i></button>
+                            <button id="botaoRemoverHeader" class="botao-perigo" title="Excluir Carro"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- NAVEGAÇÃO POR ABAS -->
+                <!-- MENU DE ABAS (CORRIGIDO) -->
                 <div class="tab-container">
-                    <button class="tab-button active" onclick="mudarAba('painel')"><i class="fas fa-tachometer-alt"></i> Controle</button>
-                    <!-- NOVA ABA SERVIÇOS -->
-                    <button class="tab-button" onclick="mudarAba('servicos')"><i class="fas fa-clipboard-list"></i> Catálogo de Serviços</button>
-                    <button class="tab-button" onclick="mudarAba('manutencao')"><i class="fas fa-tools"></i> Manutenções</button>
-                    <button class="tab-button" onclick="mudarAba('viagens')"><i class="fas fa-route"></i> Clima & Viagens</button>
+                    <button class="tab-button active" onclick="mudarAba(event, 'aba-painel')"><i class="fas fa-tachometer-alt"></i> Controle</button>
+                    <!-- AQUI ESTÁ O BOTÃO DOS SERVIÇOS -->
+                    <button class="tab-button" onclick="mudarAba(event, 'aba-servicos')"><i class="fas fa-clipboard-list"></i> Nossos Serviços</button>
+                    <button class="tab-button" onclick="mudarAba(event, 'aba-manutencao')"><i class="fas fa-tools"></i> Manutenções</button>
+                    <button class="tab-button" onclick="mudarAba(event, 'aba-viagens')"><i class="fas fa-route"></i> Clima & Viagens</button>
                 </div>
 
-                <!-- CONTEÚDO DAS ABAS -->
-                
-                <!-- ABA 1: PAINEL DE CONTROLE -->
+                <!-- --- ABA 1: CONTROLE --- -->
                 <div id="aba-painel" class="aba-conteudo active">
                     <div class="card painel-controle" style="text-align:center;">
                         <h3>Velocímetro</h3>
@@ -90,146 +88,137 @@
                     </div>
                 </div>
 
-                <!-- NOVA ABA: CATÁLOGO DE SERVIÇOS -->
+                <!-- --- ABA 2: NOSSOS SERVIÇOS (A NOVA ABA) --- -->
                 <div id="aba-servicos" class="aba-conteudo">
+                    <h3 style="margin-bottom: 15px;">Serviços Disponíveis na Oficina</h3>
                     <div class="grid-servicos">
-                        <!-- Serviço 1 -->
-                        <div class="card-servico" onclick="preencherServico('Troca de Óleo Premium', 250)">
+                        
+                        <!-- CARD 1 -->
+                        <div class="card-servico" onclick="agendarServicoRapido('Troca de Óleo Completa', 250)">
                             <div class="icone-servico"><i class="fas fa-oil-can"></i></div>
                             <h3>Troca de Óleo</h3>
-                            <p>Óleo sintético de alta performance + filtro.</p>
+                            <p>Óleo Sintético 5W30 + Filtro.</p>
                             <span class="preco-servico">R$ 250,00</span>
                             <button class="botao-mini">Agendar</button>
                         </div>
 
-                        <!-- Serviço 2 -->
-                        <div class="card-servico" onclick="preencherServico('Revisão Geral', 450)">
-                            <div class="icone-servico"><i class="fas fa-wrench"></i></div>
-                            <h3>Revisão Geral</h3>
-                            <p>Checagem completa de freios, suspensão e fluidos.</p>
-                            <span class="preco-servico">R$ 450,00</span>
-                            <button class="botao-mini">Agendar</button>
-                        </div>
-
-                        <!-- Serviço 3 -->
-                        <div class="card-servico" onclick="preencherServico('Balanceamento & Pneus', 120)">
-                            <div class="icone-servico"><i class="fas fa-sync-alt"></i></div>
+                        <!-- CARD 2 -->
+                        <div class="card-servico" onclick="agendarServicoRapido('Alinhamento e Balanceamento', 120)">
+                            <div class="icone-servico"><i class="fas fa-arrows-alt-h"></i></div>
                             <h3>Alinhamento 3D</h3>
-                            <p>Balanceamento das 4 rodas e geometria completa.</p>
+                            <p>Ajuste de geometria e balanceamento.</p>
                             <span class="preco-servico">R$ 120,00</span>
                             <button class="botao-mini">Agendar</button>
                         </div>
 
-                        <!-- Serviço 4 -->
-                        <div class="card-servico" onclick="preencherServico('Lavagem Americana', 80)">
-                            <div class="icone-servico"><i class="fas fa-pump-soap"></i></div>
-                            <h3>Lavagem Detalhada</h3>
-                            <p>Limpeza interna e externa com cera.</p>
-                            <span class="preco-servico">R$ 80,00</span>
+                        <!-- CARD 3 -->
+                        <div class="card-servico" onclick="agendarServicoRapido('Revisão de Freios', 350)">
+                            <div class="icone-servico"><i class="fas fa-exclamation-triangle"></i></div>
+                            <h3>Freios</h3>
+                            <p>Troca de pastilhas dianteiras.</p>
+                            <span class="preco-servico">R$ 350,00</span>
                             <button class="botao-mini">Agendar</button>
                         </div>
 
-                         <!-- Serviço 5 - Checkup de Viagem -->
-                         <div class="card-servico destaque" onclick="preencherViagemHelper()">
-                            <div class="icone-servico"><i class="fas fa-plane-departure"></i></div>
-                            <h3>Planejar Viagem</h3>
-                            <p>Quer viajar? Verifique o clima e defina o destino.</p>
-                            <span class="preco-servico">Grátis</span>
-                            <button class="botao-mini">Ir para Viagens</button>
+                         <!-- CARD 4 -->
+                         <div class="card-servico" onclick="agendarServicoRapido('Lavagem Detalhada', 80)">
+                            <div class="icone-servico"><i class="fas fa-pump-soap"></i></div>
+                            <h3>Lavagem</h3>
+                            <p>Interna e externa com cera.</p>
+                            <span class="preco-servico">R$ 80,00</span>
+                            <button class="botao-mini">Agendar</button>
                         </div>
                     </div>
+                    <p style="margin-top:10px; color:#666; font-size:0.9em;">* Clique em um serviço para adicioná-lo automaticamente ao histórico de manutenção.</p>
                 </div>
 
-                <!-- ABA 3: MANUTENÇÕES -->
+                <!-- --- ABA 3: MANUTENÇÕES --- -->
                 <div id="aba-manutencao" class="aba-conteudo">
                     <div class="card">
-                        <h3>Agendar/Registrar Manutenção</h3>
+                        <h3><i class="fas fa-edit"></i> Registrar Manutenção</h3>
                         <form id="formManutencao" class="form-linha">
                             <div class="campo-grupo">
-                                <label>Data do Serviço:</label>
+                                <label>Data:</label>
                                 <input type="date" id="inputDataManutencao" name="data" required>
                             </div>
-                            <div class="campo-grupo">
-                                <label>Serviço:</label>
-                                <input type="text" id="inputDescManutencao" name="descricaoServico" placeholder="Ex: Troca de óleo" required>
+                            <div class="campo-grupo" style="flex:2;">
+                                <label>Descrição do Serviço:</label>
+                                <input type="text" id="inputDescManutencao" name="descricaoServico" placeholder="O que foi feito?" required>
                             </div>
                             <div class="campo-grupo">
-                                <label>Valor:</label>
-                                <input type="number" id="inputCustoManutencao" name="custo" placeholder="R$ 0.00" required>
+                                <label>Valor (R$):</label>
+                                <input type="number" id="inputCustoManutencao" name="custo" placeholder="0.00" required>
                             </div>
-                            <button type="submit" class="botao-info" style="align-self: flex-end;">Salvar</button>
+                            <button type="submit" class="botao-info" style="height: 48px; margin-top: auto;">Salvar</button>
                         </form>
-                        <hr>
-                        <h4>Histórico de Manutenções</h4>
-                        <ul id="lista-manutencoes" class="lista-clean"></ul>
+                    </div>
+
+                    <div class="card" style="margin-top:20px;">
+                        <h4>Histórico do Veículo</h4>
+                        <ul id="lista-manutencoes" class="lista-clean">
+                            <li style="padding:10px; text-align:center;">Carregando...</li>
+                        </ul>
                     </div>
                 </div>
 
-                <!-- ABA 4: CLIMA E VIAGEM -->
+                <!-- --- ABA 4: VIAGENS E CLIMA --- -->
                 <div id="aba-viagens" class="aba-conteudo">
                     <div class="grid-layout">
-                        <!-- Clima -->
+                        <!-- CLIMA -->
                         <div class="card">
-                            <h3><i class="fas fa-cloud-sun"></i> Consultar Clima</h3>
-                            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                                <input type="text" id="cidadeClima" placeholder="Digite a Cidade (Ex: São Paulo)">
-                                <button onclick="buscarClima()" class="botao-info">Buscar</button>
+                            <h3><i class="fas fa-cloud-sun"></i> Ver Clima</h3>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" id="cidadeClima" placeholder="Digite a Cidade...">
+                                <button onclick="buscarClima()" class="botao-info">Ok</button>
                             </div>
-                            <div id="resultadoClima" style="display:none; text-align:center; padding:10px; background:#f0f8ff; border-radius:8px;">
-                                <h2 id="clima-cidade">--</h2>
-                                <h1 id="clima-temp">--°C</h1>
+                            <div id="resultadoClima" style="display:none; text-align:center; margin-top:15px; background:#e3f2fd; padding:10px; border-radius:8px;">
+                                <h3 id="clima-cidade" style="margin:0;">--</h3>
+                                <div style="display:flex; justify-content:center; align-items:center;">
+                                    <img id="clima-icone" src="" alt="img">
+                                    <h1 id="clima-temp" style="font-size:3em; margin:0;">--</h1>
+                                </div>
                                 <p id="clima-desc">--</p>
-                                <img id="clima-icone" src="" alt="icon">
                             </div>
                         </div>
 
-                        <!-- Nova Viagem -->
+                        <!-- AGENDAR VIAGEM -->
                         <div class="card">
-                            <h3><i class="fas fa-calendar-plus"></i> Agendar Viagem</h3>
+                            <h3><i class="fas fa-map-marked-alt"></i> Nova Viagem</h3>
                             <form id="formViagem">
                                 <label>Destino:</label>
-                                <input type="text" name="destino" id="inputDestinoViagem" placeholder="Para onde?" required>
-                                
-                                <label>Data de Ida:</label>
+                                <input type="text" id="inputDestinoViagem" name="destino" required>
+                                <label>Data:</label>
                                 <input type="date" name="dataIda" required>
-                                
-                                <label>Notas:</label>
-                                <input type="text" name="descricao" placeholder="Obs...">
-                                
-                                <input type="hidden" name="previsaoClima" id="inputClimaViagem">
-
-                                <button type="submit" class="botao-sucesso" style="width:100%;">Agendar Viagem</button>
+                                <label>Obs:</label>
+                                <input type="text" name="descricao">
+                                <input type="hidden" id="inputClimaViagem" name="previsaoClima">
+                                <button type="submit" class="botao-sucesso" style="width:100%; margin-top:10px;">Agendar</button>
                             </form>
                         </div>
                     </div>
-                    
-                    <div class="card" style="margin-top: 20px;">
-                        <h4>Minhas Viagens</h4>
+
+                    <div class="card" style="margin-top:20px;">
+                        <h4>Próximas Viagens</h4>
                         <ul id="lista-viagens" class="lista-clean"></ul>
                     </div>
                 </div>
 
-            </div>
+            </div> <!-- FIM PAINEL VEICULO -->
         </main>
     </div>
 
-    <!-- MODAL NOVO VEÍCULO -->
+    <!-- MODAL ADICIONAR CARRO (MANTIDO IGUAL) -->
     <dialog id="modalAdicionarVeiculo">
         <form id="formNovoVeiculo">
-            <h2>Novo Veículo</h2>
+            <h2>Adicionar Veículo</h2>
             <div class="form-grid">
                 <div class="form-item span-2">
-                    <label>Link da Imagem (URL):</label> 
-                    <input type="url" name="imagemUrl" placeholder="Cole o link da imagem aqui">
-                    <small style="color:#666; font-size:0.8em;">* Recomendado links terminados em .jpg ou .png</small>
+                    <label>URL da Imagem:</label>
+                    <input type="url" name="imagemUrl" placeholder="https://exemplo.com/carro.jpg">
                 </div>
                 <div class="form-item span-2">
                     <label>Tipo:</label>
-                    <select name="tipo" required>
-                        <option value="Carro">Carro</option>
-                        <option value="Carro Esportivo">Esportivo</option>
-                        <option value="Caminhão">Caminhão</option>
-                    </select>
+                    <select name="tipo"><option>Carro</option><option>Carro Esportivo</option><option>Caminhão</option></select>
                 </div>
                 <div class="form-item"><label>Marca:</label><input type="text" name="marca" required></div>
                 <div class="form-item"><label>Modelo:</label><input type="text" name="modelo" required></div>
@@ -245,40 +234,49 @@
     </dialog>
 
     <script type="module" src="js/principal.js"></script>
-    
-    <!-- Lógica Simples de Troca de Abas -->
+
+    <!-- SCRIPT DE ABAS ROBUSTO -->
     <script>
-        function mudarAba(abaNome) {
+        // Função universal para trocar abas
+        function mudarAba(event, idAbaDestino) {
+            // 1. Esconde todo conteudo de aba
             document.querySelectorAll('.aba-conteudo').forEach(div => div.classList.remove('active'));
+            
+            // 2. Remove o estilo 'active' de todos os botoes
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            
-            document.getElementById('aba-' + abaNome).classList.add('active');
-            
-            const botoes = document.querySelectorAll('.tab-button');
-            // Gambiarra simples para mapear botão ao indice, em app real usaria IDs
-            if(abaNome === 'painel') botoes[0].classList.add('active');
-            if(abaNome === 'servicos') botoes[1].classList.add('active');
-            if(abaNome === 'manutencao') botoes[2].classList.add('active');
-            if(abaNome === 'viagens') botoes[3].classList.add('active');
+
+            // 3. Mostra a aba certa
+            const aba = document.getElementById(idAbaDestino);
+            if(aba) {
+                aba.classList.add('active');
+            } else {
+                console.error('Aba não encontrada:', idAbaDestino);
+            }
+
+            // 4. Marca o botao clicado como ativo
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
         }
 
-        // FUNÇÃO INTELIGENTE DO CATÁLOGO DE SERVIÇOS
-        // Ao clicar no serviço, vai pra aba de manutenção e preenche sozinho
-        function preencherServico(nomeServico, valor) {
-            mudarAba('manutencao');
-            document.getElementById('inputDescManutencao').value = nomeServico;
+        // Função do Catalogo de Serviços
+        function agendarServicoRapido(nome, valor) {
+            // Clica automaticamente no botão da aba manutenção
+            // Para trocar visualmente
+            const botoes = document.querySelectorAll('.tab-button');
+            // Gambiarra segura: O 3º botão é o de manutenção (indice 2)
+            if(botoes[2]) botoes[2].click(); 
+
+            // Preenche o formulário
+            document.getElementById('inputDescManutencao').value = nome;
             document.getElementById('inputCustoManutencao').value = valor;
             
-            // Define data para Hoje
+            // Poe a data de hoje
             const hoje = new Date().toISOString().split('T')[0];
             document.getElementById('inputDataManutencao').value = hoje;
-            
-            // Avisa o usuário (usando a função de notificação global acessível via window se necessário, ou alert simples)
-            // Aqui vamos confiar no visual da troca de aba
-        }
 
-        function preencherViagemHelper() {
-            mudarAba('viagens');
+            // Alerta visual rapido
+            alert('Serviço "' + nome + '" selecionado! Confira os dados e clique em Salvar.');
         }
     </script>
 </body>
