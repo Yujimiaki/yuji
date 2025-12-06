@@ -1,10 +1,9 @@
-<!-- ARQUIVO: index.html (SUBSTITUA APENAS O MODAL OU O ARQUIVO TODO) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garagem Inteligente V3</title>
+    <title>Garagem Virtual V3</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -12,8 +11,8 @@
 <body>
     <div id="notification-area"><span id="notification-message"></span><button class="close-btn">×</button></div>
 
-    <!-- LOGIN (Sem alterações) -->
-    <div id="auth-container" class="card" style="max-width: 450px; margin: 50px auto; text-align: center; display: none;">
+    <!-- LOGIN -->
+    <div id="auth-container" class="card auth-box">
         <h2><i class="fas fa-warehouse"></i> Garagem V3</h2>
         <form id="formLogin">
             <h3>Entrar</h3>
@@ -43,26 +42,39 @@
 
         <main id="main-content">
             <div id="mensagem-selecione" class="card" style="text-align: center; padding: 50px;">
-                <h2>Selecione um veículo</h2>
+                <h2>Selecione um veículo na lista para começar</h2>
             </div>
 
+            <!-- WRAPPER DO VEÍCULO SELECIONADO -->
             <div id="painelVeiculoSelecionado" style="display: none;">
+                
+                <!-- CABEÇALHO DO CARRO -->
                 <div class="card vehicle-header">
-                    <img id="imagemVeiculo" src="" alt="Carro">
+                    <img id="imagemVeiculo" src="" alt="Foto do Veículo" onerror="this.src='https://via.placeholder.com/300x200?text=Sem+Foto+V%C3%A1lida';">
                     <div id="informacoesVeiculo">
                         <h2 id="info-modelo-placa">Modelo</h2>
                         <p id="info-proprietario"></p>
                         <p id="info-detalhes"></p>
                         <div style="margin-top: 10px;">
-                            <button id="botaoCompartilharHeader" class="botao-info">Compartilhar</button>
-                            <button id="botaoRemoverHeader" class="botao-perigo">Remover</button>
+                            <button id="botaoCompartilharHeader" class="botao-info"><i class="fas fa-share-alt"></i></button>
+                            <button id="botaoRemoverHeader" class="botao-perigo"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid-layout">
-                    <div class="card painel-controle">
-                        <h3>Painel</h3>
+                <!-- NAVEGAÇÃO POR ABAS -->
+                <div class="tab-container">
+                    <button class="tab-button active" onclick="mudarAba('painel')"><i class="fas fa-tachometer-alt"></i> Controle</button>
+                    <button class="tab-button" onclick="mudarAba('manutencao')"><i class="fas fa-tools"></i> Manutenções</button>
+                    <button class="tab-button" onclick="mudarAba('viagens')"><i class="fas fa-route"></i> Clima & Viagens</button>
+                </div>
+
+                <!-- CONTEÚDO DAS ABAS -->
+                
+                <!-- ABA 1: PAINEL DE CONTROLE -->
+                <div id="aba-painel" class="aba-conteudo active">
+                    <div class="card painel-controle" style="text-align:center;">
+                        <h3>Velocímetro</h3>
                         <div class="velocimetro-wrapper">
                             <div class="velocimetro"><div class="ponteiro" id="ponteiro-velocidade"></div></div>
                             <div class="display-velocidade"><span id="valor-velocidade">0</span> km/h</div>
@@ -74,31 +86,91 @@
                             <button id="btn-turbo" class="botao-aviso" style="display: none;">TURBO</button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="card secao-manutencao">
-                        <h3>Manutenções</h3>
-                        <form id="formManutencao" style="display: flex; gap: 5px;">
-                            <input type="text" name="descricaoServico" placeholder="Serviço" required style="flex: 2;">
-                            <input type="number" name="custo" placeholder="R$" required style="flex: 1;">
-                            <button type="submit" class="botao-info">Add</button>
+                <!-- ABA 2: MANUTENÇÕES (Nova) -->
+                <div id="aba-manutencao" class="aba-conteudo">
+                    <div class="card">
+                        <h3>Agendar/Registrar Manutenção</h3>
+                        <form id="formManutencao" class="form-linha">
+                            <div class="campo-grupo">
+                                <label>Data do Serviço:</label>
+                                <input type="date" name="data" required>
+                            </div>
+                            <div class="campo-grupo">
+                                <label>Serviço:</label>
+                                <input type="text" name="descricaoServico" placeholder="Ex: Troca de óleo" required>
+                            </div>
+                            <div class="campo-grupo">
+                                <label>Valor:</label>
+                                <input type="number" name="custo" placeholder="R$ 0.00" required>
+                            </div>
+                            <button type="submit" class="botao-info" style="align-self: flex-end;">Salvar</button>
                         </form>
-                        <ul id="lista-manutencoes" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></ul>
+                        <hr>
+                        <h4>Histórico de Manutenções</h4>
+                        <ul id="lista-manutencoes" class="lista-clean"></ul>
                     </div>
                 </div>
+
+                <!-- ABA 3: CLIMA E VIAGEM (Nova com OpenWeather) -->
+                <div id="aba-viagens" class="aba-conteudo">
+                    <div class="grid-layout">
+                        <!-- Clima -->
+                        <div class="card">
+                            <h3><i class="fas fa-cloud-sun"></i> Consultar Clima</h3>
+                            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                <input type="text" id="cidadeClima" placeholder="Digite a Cidade (Ex: São Paulo)">
+                                <button onclick="buscarClima()" class="botao-info">Buscar</button>
+                            </div>
+                            <div id="resultadoClima" style="display:none; text-align:center; padding:10px; background:#f0f8ff; border-radius:8px;">
+                                <h2 id="clima-cidade">--</h2>
+                                <h1 id="clima-temp">--°C</h1>
+                                <p id="clima-desc">--</p>
+                                <img id="clima-icone" src="" alt="icon">
+                            </div>
+                        </div>
+
+                        <!-- Nova Viagem -->
+                        <div class="card">
+                            <h3><i class="fas fa-calendar-plus"></i> Agendar Viagem</h3>
+                            <form id="formViagem">
+                                <label>Destino:</label>
+                                <input type="text" name="destino" id="inputDestinoViagem" placeholder="Para onde?" required>
+                                
+                                <label>Data de Ida:</label>
+                                <input type="date" name="dataIda" required>
+                                
+                                <label>Notas:</label>
+                                <input type="text" name="descricao" placeholder="Obs...">
+                                
+                                <!-- Campo escondido para salvar o clima no momento do agendamento -->
+                                <input type="hidden" name="previsaoClima" id="inputClimaViagem">
+
+                                <button type="submit" class="botao-sucesso" style="width:100%;">Agendar Viagem</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="margin-top: 20px;">
+                        <h4>Minhas Viagens</h4>
+                        <ul id="lista-viagens" class="lista-clean"></ul>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
-    <!-- MODAL (ALTERADO PARA URL) -->
+    <!-- MODAL NOVO VEÍCULO -->
     <dialog id="modalAdicionarVeiculo">
         <form id="formNovoVeiculo">
             <h2>Novo Veículo</h2>
             <div class="form-grid">
                 <div class="form-item span-2">
-                    <!-- AQUI MUDOU: AGORA É UM LINK DE TEXTO -->
                     <label>Link da Imagem (URL):</label> 
-                    <input type="url" name="imagemUrl" placeholder="Cole o link de uma imagem do Google aqui" required>
-                    <small style="font-size: 0.8em; color: #666;">Dica: Clique com botão direito na imagem do Google > "Copiar endereço da imagem"</small>
+                    <input type="url" name="imagemUrl" placeholder="http://exemplo.com/carro.jpg">
+                    <small style="color:red; font-size:0.8em;">* Dica: Use botão direito na imagem do Google > "Copiar endereço da imagem". A imagem deve terminar em .jpg ou .png para funcionar bem.</small>
                 </div>
                 <div class="form-item span-2">
                     <label>Tipo:</label>
@@ -122,5 +194,23 @@
     </dialog>
 
     <script type="module" src="js/principal.js"></script>
+    
+    <!-- Script Inline Simples para Controle de Abas -->
+    <script>
+        function mudarAba(abaNome) {
+            // Esconde todas as abas
+            document.querySelectorAll('.aba-conteudo').forEach(div => div.classList.remove('active'));
+            // Remove active dos botoes
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            // Mostra a selecionada
+            document.getElementById('aba-' + abaNome).classList.add('active');
+            // Acha o botão clicado e ativa (simulação visual simples)
+            const botoes = document.querySelectorAll('.tab-button');
+            if(abaNome === 'painel') botoes[0].classList.add('active');
+            if(abaNome === 'manutencao') botoes[1].classList.add('active');
+            if(abaNome === 'viagens') botoes[2].classList.add('active');
+        }
+    </script>
 </body>
 </html>
